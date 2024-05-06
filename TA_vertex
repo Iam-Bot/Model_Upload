@@ -818,3 +818,38 @@ benchmark = MMLU(
 # Replace 'mistral_7b' with your own custom model
 benchmark.evaluate(model=mistral_7b)
 print(benchmark.overall_score)
+
+
+from deepeval.benchmarks import MMLU
+from deepeval.benchmarks.tasks import MMLUTask
+import json
+
+# Define your custom models using the VertexAI class
+def initialize_model(model_name, temperature):
+    with open(f'{model_name}_config.json', 'r') as file:
+        config = json.load(file)
+    return vertexAI(model=config['model'], temp=temperature)
+
+# Initialize both models
+llm_gemini = initialize_model("gemini-pro", 0.2)
+llm_claude = initialize_model("claude", 0.2)
+
+# Define the MMLU benchmark for a specific task with optional shots
+benchmark_gemini = MMLU(
+    tasks=[MMLUTask.COLLEGE_COMPUTER_SCIENCE, MMLUTask.HIGH_SCHOOL_PHYSICS],
+    n_shots=3
+)
+
+benchmark_claude = MMLU(
+    tasks=[MMLUTask.MEDICAL_GENETICS, MMLUTask.BUSINESS_ETHICS],
+    n_shots=3
+)
+
+# Evaluate the models
+results_gemini = benchmark_gemini.evaluate(model=llm_gemini)
+results_claude = benchmark_claude.evaluate(model=llm_claude)
+
+# Print the results
+print("Gemini-Pro Results:", results_gemini.overall_score)
+print("Claude Results:", results_claude.overall_score)
+
