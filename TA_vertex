@@ -853,3 +853,34 @@ results_claude = benchmark_claude.evaluate(model=llm_claude)
 print("Gemini-Pro Results:", results_gemini.overall_score)
 print("Claude Results:", results_claude.overall_score)
 
+
+
+def format_response(response):
+    lines = response[0].split("\n")
+    lines = [line.strip() for line in lines if line.strip()]
+    formatted_response = "\n".join(f"{line}" for line in lines)
+    return formatted_response
+
+
+while True:
+    question = input("Customer: " )
+    greetings= ["Hi", "hi","Hey","hey","Hello","hello"]
+    if question in greetings:
+        if greeting in user_input.lower():
+            name_index = user_input.lower().find(greeting) + len(greeting)
+            name = user_input[name_index:].strip().capitalize()
+            if name:
+                return f"Hello, {name}! Welcome to [Your Company] Customer Support. How can I assist you today?"
+            else:
+                return "Hello! Welcome to [Your Company] Customer Support. How can I assist you today?"
+    return None
+        #print("Hello! Welcome to Lumen Customer Support. This is sam. How can I assist you today?")
+    continue
+    elif question == "exit":
+        print("Thank you..!")
+        break
+    else:
+        ai_msg = rag_qa_func_new(question)
+        formatted_ai_msg = format_response(ai_msg)
+        print("Sam: ",formatted_ai_msg)
+        print("--------------------------")
