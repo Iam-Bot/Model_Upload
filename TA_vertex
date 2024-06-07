@@ -888,3 +888,58 @@ while True:
 
 
 https://sqlalche.me/e/20/4xp6
+
+
+
+
+
+
+
+
+
+
+
+
+import json
+import os 
+from google.cloud import bigquery
+from google.cloud import aiplatform
+import vertexai
+
+with open('config.json', 'r') as file:
+    config = json.load(file)
+
+
+def model_init():
+    os.environ["GOOGLE_CLOUD_CREDENTIALS"] = config['GOOGLE_APPLICATION_CREDENTIALS_VERTEX']
+    vertexai.init(project = config['PROJECT_ID'], location = config['location'])
+    aiplatform.init(project = config['PROJECT_ID'], location = config['location'])
+
+
+def bq_init():
+    os.environ["GOOGLE_CLOUD_CREDENTIALS"] = config['GOOGLE_CLOUD_CREDENTIALS']
+    bq_client = bigquery.Client()
+    return bq_client
+
+{
+    "GOOGLE_APPLICATION_CREDENTIALS" : "prj-adapt-app-dev-001--adapt-services.json",
+    "GOOGLE_APPLICATION_CREDENTIALS_VERTEX":"sa-adapt-app-ai-services.json",
+    "PROJECT_ID" : "prj-adapt-ai-dev-001", 
+    "UPLOAD_PROJECT_ID" : "prj-adapt-app-dev-001",
+    "location":"us-west1",
+    "dataset_id" : "centralised_customer_data",
+    "table_name" :  "centralised_customer_data",
+    "bucket_name" : "adapt-data-dev-document-store-bucket",
+    "pdf_folder_path" : "gs://adapt-data-dev-document-store-bucket/",
+    "index_store" : "docs_gecko_store",
+    "schema_index_store" : "schema_store",
+    "file_name":"question_examples.json",
+    "api_bucket":"adapt-data-dev-upload-api-bucket",
+    "hcheck_cred":"biwf-big-query-service-account.json",
+    "hcheck_proj":"biwf-test",
+    "hcheck_dataset":"QF_DEVELOPMENT_TESTING",
+    "hcheck_table":"REACTIVE_PIPELINE_ALL_COLUMNS_FINAL",
+    "massmkt_cred":"massmkt-poc.json",
+    "massmkt_proj":"massmkt-poc",
+    "massmkt_dataset":"prodapt_dev"
+}
