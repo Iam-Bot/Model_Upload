@@ -1210,3 +1210,124 @@ class AppConfig:
     CORS_ORIGINS = CONFIG['APP']['CORS_ORIGINS']
     BUCKET_NAME = CONFIG['APP']['BUCKET_NAME']
 
+
+
+# config/__init__.py
+
+# Import necessary modules and functions from config.py
+from .config import (
+    setup_environment,
+    CONFIG,
+    VERTEX_AI_CONFIG,
+    MODEL_NAME,
+    GEN_MODEL,
+    GEN_MODEL_2,
+    INSTANCE_CONNECTION_NAME
+)
+
+# Optionally, you can define an __all__ variable to control what is accessible when the module is imported
+__all__ = [
+    'setup_environment',
+    'CONFIG',
+    'VERTEX_AI_CONFIG',
+    'MODEL_NAME',
+    'GEN_MODEL',
+    'GEN_MODEL_2',
+    'INSTANCE_CONNECTION_NAME'
+]
+
+
+import sys
+import os
+import json
+from langchain.chains import ConversationalRetrievalChain
+from langchain_community.llms import VertexAI
+from langchain_community.embeddings import VertexAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.prompts import PromptTemplate
+from langchain.memory import ConversationBufferMemory
+
+# Ensure the config directory is in the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config')))
+
+# Import the configuration module
+import config
+
+# Initialize the environment
+config.setup_environment()
+
+class DocChain:
+    def __init__(self):
+        llm_config = config.VERTEX_AI_CONFIG['llm']
+        self.llm = VertexAI(
+            model_name=llm_config['model_name'],
+            project=config.CONFIG['PROJECT_ID'],
+            location=config.CONFIG['location'],
+            temperature=llm_config['temperature'],
+            max_output_tokens=llm_config['max_output_tokens']
+        )
+        self.embeddings = VertexAIEmbeddings(
+            model_name=config.MODEL_NAME,
+            project=config.CONFIG['PROJECT_ID'],
+            location=config.CONFIG['location']
+        )
+
+        index_store = config.CONFIG['index_store']
+        self.doc_vector_db = FAISS.load_local(index_store, self.embeddings, allow_dangerous_deserialization=True)
+
+        custom_prompt = """Task: Respond to the user's question by leveraging the provided context and chat history. When the answer requires detailed explanation, present the response in a structured, step-by-step format.
+
+        - User Query: {question}
+        - Context: {context}
+        - Chat History: {chat_history}
+
+        Instructions:
+        1. Review the user's query, the provided context, and the chat history to fully understand the user's needs and the conversation's background.
+        2. Determine if the user's query requires a simple answer or a detailed step-by-step explanation.
+        3. If a simple answer suffices, craft a clear and concise response based on the context and chat history.
+        4. If the query requires a detailed explanation, formulate the response in an organized, step-by-step manner to ensure clarity and ease of understanding.
+        5. Ensure that the response is coherent, follows the logical flow, and is directly relevant to the user's query.
+
+        Output:
+        - Response: [Generate a response that either directly answers the user's query or provides a detailed explanation in the form of steps, utilizing the context and chat history.]
+        """
+        self.custom_question_prompt = PromptTemplate(
+            input_variables=["chat_history", "context", "question"],
+            template=custom_prompt
+        )
+        self.memory = ConversationBufferMemory(
+            memory_key='chat_history',
+            return_docs=False,
+            return_messages=True,
+            input_key='question',
+            output_key='answer'
+        )
+
+        self.qa_chain = ConversationalRetrievalChain.from_llm(
+            llm=self.llm,
+            retriever=self.doc_vector_db.as_retriever(search_kwargs={'k': 5}),
+            verbose=True,
+            return_source_documents=True,
+            memory=self.memory,
+            combine_docs_chain_kwargs={"prompt": self.custom_question_prompt}
+        )
+
+    def retrieval_chain(self, user_input):
+        chat_history, question = user_input  # user input is a tuple of chat history and query
+        result = self.qa_chain({"question": question, "chat_history": chat_history})
+        return result['answer']
+
+    def upload_retrieval_chain(self, user_input, vector_db):
+        """For the uploaded document"""
+        chat_history, question = user_input  # user input is a tuple of chat history and query
+        chain = ConversationalRetrievalChain.from_llm(
+            llm=self.llm,
+            retriever=vector_db.as_retriever(search_kwargs={'k': 5}),
+            verbose=True,
+            return_source_documents=True,
+            memory=self.memory,
+            combine_docs_chain_kwargs={"prompt": self.custom_question_prompt}
+        )
+        result = chain({"question": question, "chat_history": chat_history})
+        return result['answer']
+
