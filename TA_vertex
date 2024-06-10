@@ -1054,3 +1054,159 @@ def upload_retrieval_chain(user_input, vector_db):
         "BUCKET_NAME": "temp-bucket-chat"
     }
 }
+
+
+"""
+File Name: config.py
+Author: Denesh A, Vibhish R (Version 2)
+Purpose: This script sets up the environment and configuration for Vertex AI language models and Google Cloud services.
+Date: 2024-05-20
+
+Examples:
+    - Set up environment:
+        setup_environment()
+    - Retrieve Vertex AI language model instance:
+        model = get_vertex_ai_llm('llm')
+"""
+
+import os
+import json
+import logging
+from langchain_google_vertexai import VertexAI
+from vertexai.preview.generative_models import GenerativeModel
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Load configuration from config.json
+with open('config.json', 'r') as file:
+    CONFIG = json.load(file)
+
+# Environment Setup
+def setup_environment():
+    """
+    Configure all necessary environment variables and settings.
+    Sets the path for Google application credentials.
+
+    Example:
+        setup_environment()
+    """
+    logging.info("Setting up environment")
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = CONFIG['GOOGLE_APPLICATION_CREDENTIALS']
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS_VERTEX'] = CONFIG['GOOGLE_APPLICATION_CREDENTIALS_VERTEX']
+    logging.info("Environment setup complete")
+
+# Configuration dictionary to store settings for Vertex AI language models
+VERTEX_AI_CONFIG = {
+    "llm": {
+        "model_name": CONFIG['VERTEX_AI_MODELS']['llm']['model_name'],
+        "temperature": CONFIG['VERTEX_AI_MODELS']['llm']['temperature'],
+        "max_output_tokens": CONFIG['VERTEX_AI_MODELS']['llm']['max_output_tokens']
+    },
+    "llm_2": {
+        "model_name": CONFIG['VERTEX_AI_MODELS']['llm_2']['model_name'],
+        "temperature": CONFIG['VERTEX_AI_MODELS']['llm_2']['temperature'],
+        "max_output_tokens": CONFIG['VERTEX_AI_MODELS']['llm_2']['max_output_tokens']
+    }
+}
+
+# Call the environment setup function
+setup_environment()
+
+# Model name for embeddings and generative model
+MODEL_NAME = CONFIG['EMBEDDING_MODEL_NAME']
+GEN_MODEL = GenerativeModel(CONFIG['GENERATIVE_MODEL_1'])
+GEN_MODEL_2 = GenerativeModel(CONFIG['GENERATIVE_MODEL_2'])
+
+# Database connection settings
+project_id = CONFIG['DB']['project_id']
+region = CONFIG['DB']['region']
+instance_name = CONFIG['DB']['instance_name']
+INSTANCE_CONNECTION_NAME = f"{project_id}:{region}:{instance_name}"
+DB_USER = CONFIG['DB']['user']
+DB_PASS = CONFIG['DB']['password']
+DB_NAME = CONFIG['DB']['name']
+
+# Initialize Google Cloud SQL Connector
+connector = Connector()
+
+# Function to return the database connection object
+def getconn():
+    """
+    Establishes a connection to the Google Cloud SQL database.
+
+    Returns:
+        Connection: A database connection object.
+    """
+    logging.info("Establishing database connection")
+    conn = connector.connect(
+        INSTANCE_CONNECTION_NAME,
+        "pymysql",
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME
+    )
+    logging.info("Database connection established")
+    return conn
+
+# Create SQLAlchemy engine
+engine = sqlalchemy.create_engine(
+    "mysql+pymysql://",
+    creator=getconn,
+)
+
+# Create session maker
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Create declarative base
+Base = declarative_base()
+
+# Secret key to sign JWT tokens
+SECRET_KEY = CONFIG['JWT']['secret_key']
+
+# Algorithm used for JWT tokens
+ALGORITHM = CONFIG['JWT']['algorithm']
+
+# Token expiration for access token
+ACCESS_TOKEN_EXPIRE_MINUTES = CONFIG['JWT']['access_token_expire_minutes']
+
+# Function to create LLM instances based on configurations
+def get_vertex_ai_llm(key):
+    """
+    Retrieves Vertex AI language model instances based on a given configuration key.
+
+    Args:
+        key (str): A string key to identify the model configuration.
+
+    Returns:
+        VertexAI: A configured instance of VertexAI.
+
+    Raises:
+        ValueError: If no configuration is found for the provided key.
+
+    Example:
+        model = get_vertex_ai_llm('llm')
+    """
+    logging.info(f"Retrieving Vertex AI LLM with key: {key}")
+    config = VERTEX_AI_CONFIG.get(key, {})
+    if not config:
+        logging.error(f"No configuration found for key: {key}")
+        raise ValueError(f"No configuration found for key: {key}")
+    logging.info(f"Configuration found for key: {key}, creating VertexAI instance")
+    return VertexAI(**config)
+
+# Configuration class for managing settings
+class AppConfig:
+    """
+    Configuration class to store application settings.
+    """
+    CORS_ORIGINS = CONFIG['APP']['CORS_ORIGINS']
+    BUCKET_NAME = CONFIG['APP']['BUCKET_NAME']
+
