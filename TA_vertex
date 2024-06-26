@@ -890,87 +890,92 @@ while True:
 
 import os
 import json
-from google.cloud import storage
-import langchain
-from langchain_community.vectorstores import Chroma
-from langchain.text_splitter import CharacterTextSplitter
-from PyPDF2 import PdfReader
 import io
+from google.cloud import storage
+from PyPDF2 import PdfReader
 import docx
+from langchain.chains import ConversationalRetrievalChain
 from langchain_community.llms import VertexAI
 from langchain_community.embeddings import VertexAIEmbeddings
-#Service Account
-with open('config.json', 'r') as file:
-    config = json.load(file)
+from langchain_community.vectorstores import Chroma
+from langchain.text_splitter import CharacterTextSplitter
 
-from service_init import model_init
-model_init()
+# Ensure the config directory is in the Python path
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config')))
 
-def get_pdf_splits(pdf_file):
-    pdfreader = PdfReader(pdf_file)
-    raw_text = ""
-    for i, page in enumerate(pdfreader.pages):
-        content = page.extract_text()
-        if content:
-            raw_text += content
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=2000,
-        chunk_overlap=100,
-        length_function=len,
-    )
-    texts = text_splitter.split_text(raw_text) 
-    return texts
+# Import the configuration module
+import config
 
-def extract_text_from_docx(docx_path):
-    doc = docx.Document(docx_path)
-    raw_text = "\n".join([paragraph.text for paragraph in doc.paragraphs if paragraph.text])
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=2000,
-        chunk_overlap=100,
-        length_function=len,
-    )
-    texts = text_splitter.split_text(raw_text) 
-    return texts
+class DocumentUploader:
+    def __init__(self):
+        config.setup_environment()
+        self.project_id = config.CONFIG['PROJECT_ID']
+        self.bucket_name = config.CONFIG['BUCKET_NAME']
+        self.client = storage.Client()
+        self.embeddings = VertexAIEmbeddings(
+            model_name="textembedding-gecko@003",
+            project=self.project_id,
+            location=config.CONFIG['location']
+        )
+        
+    def get_pdf_splits(self, pdf_file):
+        pdfreader = PdfReader(pdf_file)
+        raw_text = ""
+        for page in pdfreader.pages:
+            content = page.extract_text()
+            if content:
+                raw_text += content
+        text_splitter = CharacterTextSplitter(
+            separator="\n",
+            chunk_size=2000,
+            chunk_overlap=100,
+            length_function=len,
+        )
+        return text_splitter.split_text(raw_text)
 
+    def extract_text_from_docx(self, docx_file):
+        doc = docx.Document(docx_file)
+        raw_text = "\n".join([paragraph.text for paragraph in doc.paragraphs if paragraph.text])
+        text_splitter = CharacterTextSplitter(
+            separator="\n",
+            chunk_size=2000,
+            chunk_overlap=100,
+            length_function=len,
+        )
+        return text_splitter.split_text(raw_text)
 
+    def get_latest_documents(self, num_files=5):
+        blobs = self.client.list_blobs(self.bucket_name)
+        sorted_blobs = sorted(blobs, key=lambda x: x.updated, reverse=True)
+        return sorted_blobs[:num_files]
 
-def get_document():
-    PROJECT_ID = 'prj-adapt-app-dev-001'
-    os.environ['GOOGLE_APPLICATION_CREDENTIAL']='prj-adapt-app-dev-001--adapt-services.json'
-    bucket_name = 'adapt-data-dev-document-store-bucket'
-    client = storage.Client()
-    blobs = client.list_blobs(bucket_name)
-    print('blobs: ',blobs)
-    # Sort the blobs by their updated time
-    sorted_blobs = sorted(blobs, key=lambda x: x.updated, reverse=True)
-    num_files_to_get = 5  # Change this number as needed
-    latest_files = sorted_blobs[:num_files_to_get]
-    print('filename: ', latest_files[0].name)
-    # bucket = client.get_bucket(bucket_name)
-    # blob = blob.name.endswith(latest_files[0].name)
+    def process_document(self, blob):
+        content = blob.download_as_string()
+        if blob.name.endswith(".pdf"):
+            pdf = io.BytesIO(content)
+            return self.get_pdf_splits(pdf)
+        elif blob.name.endswith(".docx"):
+            doc = io.BytesIO(content)
+            return self.extract_text_from_docx(doc)
+        return None
 
-    for blob_x in client.list_blobs(bucket_name):
-        print(blob_x)
-        if blob_x.name.endswith(latest_files[0].name) and blob_x.name.endswith(".pdf"):
-            content=blob_x.download_as_string()
-            pdf=io.BytesIO(content)
-            pdf_splitter = get_pdf_splits(pdf)
-            print(pdf_splitter)
-            break
-            # embed_index(pdf_splitter, embeddings, index_store)
-        if blob_x.name.endswith(latest_files[0].name) and blob_x.name.endswith(".docx"):
-            content=blob_x.download_as_string()
-            doc=io.BytesIO(content)
-            doc_splitter = extract_text_from_docx(doc)
-            print(doc_splitter)
-            # embed_index(doc_splitter, embeddings, index_store)
-            break
+    def upload_documents(self):
+        latest_files = self.get_latest_documents()
+        for blob in latest_files:
+            processed_text = self.process_document(blob)
+            if processed_text:
+                print(f"Processed {blob.name}: {processed_text}")
 
+    def create_vector_db(self, data):
+        vectordb = Chroma.from_texts(
+            data,
+            embedding=self.embeddings
+        )
+        return vectordb
 
-def db(data):
-    vectordb = Chroma.from_texts(data,embedding=VertexAIEmbeddings(model_name="textembedding-gecko@003",project = config['PROJECT_ID'], location = config['location']))
-    return vectordb
+if __name__ == "__main__":
+    document_uploader = DocumentUploader()
+    document_uploader.upload_documents()
 
 
