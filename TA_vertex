@@ -887,451 +887,90 @@ while True:
 
 
 
-https://sqlalche.me/e/20/4xp6
 
-
-
-
-
-
-
-
-
-
-
-
+import os
 import json
-import os 
-from google.cloud import bigquery
-from google.cloud import aiplatform
-import vertexai
-
-with open('config.json', 'r') as file:
-    config = json.load(file)
-
-
-def model_init():
-    os.environ["GOOGLE_CLOUD_CREDENTIALS"] = config['GOOGLE_APPLICATION_CREDENTIALS_VERTEX']
-    vertexai.init(project = config['PROJECT_ID'], location = config['location'])
-    aiplatform.init(project = config['PROJECT_ID'], location = config['location'])
-
-
-def bq_init():
-    os.environ["GOOGLE_CLOUD_CREDENTIALS"] = config['GOOGLE_CLOUD_CREDENTIALS']
-    bq_client = bigquery.Client()
-    return bq_client
-
-{
-    "GOOGLE_APPLICATION_CREDENTIALS" : "prj-adapt-app-dev-001--adapt-services.json",
-    "GOOGLE_APPLICATION_CREDENTIALS_VERTEX":"sa-adapt-app-ai-services.json",
-    "PROJECT_ID" : "prj-adapt-ai-dev-001", 
-    "UPLOAD_PROJECT_ID" : "prj-adapt-app-dev-001",
-    "location":"us-west1",
-    "dataset_id" : "centralised_customer_data",
-    "table_name" :  "centralised_customer_data",
-    "bucket_name" : "adapt-data-dev-document-store-bucket",
-    "pdf_folder_path" : "gs://adapt-data-dev-document-store-bucket/",
-    "index_store" : "docs_gecko_store",
-    "schema_index_store" : "schema_store",
-    "file_name":"question_examples.json",
-    "api_bucket":"adapt-data-dev-upload-api-bucket",
-    "hcheck_cred":"biwf-big-query-service-account.json",
-    "hcheck_proj":"biwf-test",
-    "hcheck_dataset":"QF_DEVELOPMENT_TESTING",
-    "hcheck_table":"REACTIVE_PIPELINE_ALL_COLUMNS_FINAL",
-    "massmkt_cred":"massmkt-poc.json",
-    "massmkt_proj":"massmkt-poc",
-    "massmkt_dataset":"prodapt_dev"
-}
-
-
-
+from google.cloud import storage
 import langchain
-from langchain.chains import ConversationalRetrievalChain
+from langchain_community.vectorstores import Chroma
+from langchain.text_splitter import CharacterTextSplitter
+from PyPDF2 import PdfReader
+import io
+import docx
 from langchain_community.llms import VertexAI
 from langchain_community.embeddings import VertexAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain.prompts import PromptTemplate
-from langchain.memory import ConversationBufferMemory
-import json
-import os
-
+#Service Account
 with open('config.json', 'r') as file:
     config = json.load(file)
 
 from service_init import model_init
 model_init()
 
-#generation_config = { "temperature": 0, "top_p": 1, "top_k": 1, "max_output_tokens": 2048,}
-llm=VertexAI(model_name="gemini-pro", project = config['PROJECT_ID'], location = config['location'])
-embeddings = VertexAIEmbeddings(model_name="textembedding-gecko@003",project = config['PROJECT_ID'], location = config['location']) 
-#loading vector db
-
-index_store = config['index_store']
-
-doc_vector_db = FAISS.load_local(index_store,embeddings,allow_dangerous_deserialization = True)
-
-custom_prompt = """Task: Respond to the user's question by leveraging the provided context and chat history. When the answer requires detailed explanation, present the response in a structured, step-by-step format.
- 
-- User Query: {question}
-- Context: {context}
-- Chat History: {chat_history}
- 
-Instructions:
-1. Review the user's query, the provided context, and the chat history to fully understand the user's needs and the conversation's background.
-2. Determine if the user's query requires a simple answer or a detailed step-by-step explanation.
-3. If a simple answer suffices, craft a clear and concise response based on the context and chat history.
-4. If the query requires a detailed explanation, formulate the response in an organized, step-by-step manner to ensure clarity and ease of understanding.
-5. Ensure that the response is coherent, follows the logical flow, and is directly relevant to the user's query.
- 
-Output:
-- Response: [Generate a response that either directly answers the user's query or provides a detailed explanation in the form of steps, utilizing the context and chat history.]
-"""
-CUSTOM_QUESTION_PROMPT = PromptTemplate(input_variables=["chat_history", "context", "question"],template=custom_prompt)
-memory = ConversationBufferMemory(memory_key='chat_history',return_docs=False, return_messages=True, input_key='question', output_key='answer')
-
-QA_CHAIN = ConversationalRetrievalChain.from_llm(llm=llm, 
-                                                 retriever=doc_vector_db.as_retriever(search_kwargs={'k':5}),
-                                                 verbose=True,
-                                                 return_source_documents=True,
-                                                 memory = memory,
-                                                 combine_docs_chain_kwargs={"prompt": CUSTOM_QUESTION_PROMPT})
-
-def retrieval_chain(user_input): 
-    chat_history,question = user_input #user input is a tuple of chat history and query
-    result = QA_CHAIN({"question": question, "chat_history":chat_history})
-    return result['answer']
-
-
-def upload_retrieval_chain(user_input, vector_db):
-    """For the uploaded document"""
-
-    chat_history,question = user_input #user input is a tuple of chat history and query
-    chain = ConversationalRetrievalChain.from_llm(llm=llm, 
-                                                  retriever=vector_db.as_retriever(search_kwargs={'k':5}),
-                                                  verbose=True,
-                                                  return_source_documents=True,
-                                                  memory = memory,
-                                                  combine_docs_chain_kwargs={"prompt": CUSTOM_QUESTION_PROMPT})
-    
-    result = chain({"question": question, "chat_history":chat_history})
-    return result['answer']
-
-
-{
-    "GOOGLE_APPLICATION_CREDENTIALS": "Config/lumen-b-ctl-047-e2aeb24b0ea0.json",
-    "GOOGLE_APPLICATION_CREDENTIALS_VERTEX": "sa-adapt-app-ai-services.json",
-    "VERTEX_AI_MODELS": {
-        "llm": {
-            "model_name": "gemini-1.0-pro-002",
-            "temperature": 0.5,
-            "max_output_tokens": 8192
-        },
-        "llm_2": {
-            "model_name": "gemini-1.5-pro-preview-0409",
-            "temperature": 0.3,
-            "max_output_tokens": 2048
-        }
-    },
-    "EMBEDDING_MODEL_NAME": "textembedding-gecko@002",
-    "GENERATIVE_MODEL_1": "gemini-1.5-pro-preview-0409",
-    "GENERATIVE_MODEL_2": "gemini-1.0-pro-002",
-    "DB": {
-        "project_id": "lumen-b-ctl-047",
-        "region": "us-central1",
-        "instance_name": "mysql-test",
-        "user": "test-user",
-        "password": "Password@123",
-        "name": "mysql_db"
-    },
-    "JWT": {
-        "secret_key": "af6e11c710280304f60aa46b69042b467b573ce1c9489dc4c1957e7b25c518eb",
-        "algorithm": "HS256",
-        "access_token_expire_minutes": 30
-    },
-    "APP": {
-        "CORS_ORIGINS": ["*"],
-        "BUCKET_NAME": "temp-bucket-chat"
-    }
-}
-
-
-"""
-File Name: config.py
-Author: Denesh A, Vibhish R (Version 2)
-Purpose: This script sets up the environment and configuration for Vertex AI language models and Google Cloud services.
-Date: 2024-05-20
-
-Examples:
-    - Set up environment:
-        setup_environment()
-    - Retrieve Vertex AI language model instance:
-        model = get_vertex_ai_llm('llm')
-"""
-
-import os
-import json
-import logging
-from langchain_google_vertexai import VertexAI
-from vertexai.preview.generative_models import GenerativeModel
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from google.cloud.sql.connector import Connector
-import sqlalchemy
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-# Load configuration from config.json
-with open('config.json', 'r') as file:
-    CONFIG = json.load(file)
-
-# Environment Setup
-def setup_environment():
-    """
-    Configure all necessary environment variables and settings.
-    Sets the path for Google application credentials.
-
-    Example:
-        setup_environment()
-    """
-    logging.info("Setting up environment")
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = CONFIG['GOOGLE_APPLICATION_CREDENTIALS']
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS_VERTEX'] = CONFIG['GOOGLE_APPLICATION_CREDENTIALS_VERTEX']
-    logging.info("Environment setup complete")
-
-# Configuration dictionary to store settings for Vertex AI language models
-VERTEX_AI_CONFIG = {
-    "llm": {
-        "model_name": CONFIG['VERTEX_AI_MODELS']['llm']['model_name'],
-        "temperature": CONFIG['VERTEX_AI_MODELS']['llm']['temperature'],
-        "max_output_tokens": CONFIG['VERTEX_AI_MODELS']['llm']['max_output_tokens']
-    },
-    "llm_2": {
-        "model_name": CONFIG['VERTEX_AI_MODELS']['llm_2']['model_name'],
-        "temperature": CONFIG['VERTEX_AI_MODELS']['llm_2']['temperature'],
-        "max_output_tokens": CONFIG['VERTEX_AI_MODELS']['llm_2']['max_output_tokens']
-    }
-}
-
-# Call the environment setup function
-setup_environment()
-
-# Model name for embeddings and generative model
-MODEL_NAME = CONFIG['EMBEDDING_MODEL_NAME']
-GEN_MODEL = GenerativeModel(CONFIG['GENERATIVE_MODEL_1'])
-GEN_MODEL_2 = GenerativeModel(CONFIG['GENERATIVE_MODEL_2'])
-
-# Database connection settings
-project_id = CONFIG['DB']['project_id']
-region = CONFIG['DB']['region']
-instance_name = CONFIG['DB']['instance_name']
-INSTANCE_CONNECTION_NAME = f"{project_id}:{region}:{instance_name}"
-DB_USER = CONFIG['DB']['user']
-DB_PASS = CONFIG['DB']['password']
-DB_NAME = CONFIG['DB']['name']
-
-# Initialize Google Cloud SQL Connector
-connector = Connector()
-
-# Function to return the database connection object
-def getconn():
-    """
-    Establishes a connection to the Google Cloud SQL database.
-
-    Returns:
-        Connection: A database connection object.
-    """
-    logging.info("Establishing database connection")
-    conn = connector.connect(
-        INSTANCE_CONNECTION_NAME,
-        "pymysql",
-        user=DB_USER,
-        password=DB_PASS,
-        db=DB_NAME
+def get_pdf_splits(pdf_file):
+    pdfreader = PdfReader(pdf_file)
+    raw_text = ""
+    for i, page in enumerate(pdfreader.pages):
+        content = page.extract_text()
+        if content:
+            raw_text += content
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=2000,
+        chunk_overlap=100,
+        length_function=len,
     )
-    logging.info("Database connection established")
-    return conn
+    texts = text_splitter.split_text(raw_text) 
+    return texts
 
-# Create SQLAlchemy engine
-engine = sqlalchemy.create_engine(
-    "mysql+pymysql://",
-    creator=getconn,
-)
-
-# Create session maker
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create declarative base
-Base = declarative_base()
-
-# Secret key to sign JWT tokens
-SECRET_KEY = CONFIG['JWT']['secret_key']
-
-# Algorithm used for JWT tokens
-ALGORITHM = CONFIG['JWT']['algorithm']
-
-# Token expiration for access token
-ACCESS_TOKEN_EXPIRE_MINUTES = CONFIG['JWT']['access_token_expire_minutes']
-
-# Function to create LLM instances based on configurations
-def get_vertex_ai_llm(key):
-    """
-    Retrieves Vertex AI language model instances based on a given configuration key.
-
-    Args:
-        key (str): A string key to identify the model configuration.
-
-    Returns:
-        VertexAI: A configured instance of VertexAI.
-
-    Raises:
-        ValueError: If no configuration is found for the provided key.
-
-    Example:
-        model = get_vertex_ai_llm('llm')
-    """
-    logging.info(f"Retrieving Vertex AI LLM with key: {key}")
-    config = VERTEX_AI_CONFIG.get(key, {})
-    if not config:
-        logging.error(f"No configuration found for key: {key}")
-        raise ValueError(f"No configuration found for key: {key}")
-    logging.info(f"Configuration found for key: {key}, creating VertexAI instance")
-    return VertexAI(**config)
-
-# Configuration class for managing settings
-class AppConfig:
-    """
-    Configuration class to store application settings.
-    """
-    CORS_ORIGINS = CONFIG['APP']['CORS_ORIGINS']
-    BUCKET_NAME = CONFIG['APP']['BUCKET_NAME']
+def extract_text_from_docx(docx_path):
+    doc = docx.Document(docx_path)
+    raw_text = "\n".join([paragraph.text for paragraph in doc.paragraphs if paragraph.text])
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=2000,
+        chunk_overlap=100,
+        length_function=len,
+    )
+    texts = text_splitter.split_text(raw_text) 
+    return texts
 
 
 
-# config/__init__.py
+def get_document():
+    PROJECT_ID = 'prj-adapt-app-dev-001'
+    os.environ['GOOGLE_APPLICATION_CREDENTIAL']='prj-adapt-app-dev-001--adapt-services.json'
+    bucket_name = 'adapt-data-dev-document-store-bucket'
+    client = storage.Client()
+    blobs = client.list_blobs(bucket_name)
+    print('blobs: ',blobs)
+    # Sort the blobs by their updated time
+    sorted_blobs = sorted(blobs, key=lambda x: x.updated, reverse=True)
+    num_files_to_get = 5  # Change this number as needed
+    latest_files = sorted_blobs[:num_files_to_get]
+    print('filename: ', latest_files[0].name)
+    # bucket = client.get_bucket(bucket_name)
+    # blob = blob.name.endswith(latest_files[0].name)
 
-# Import necessary modules and functions from config.py
-from .config import (
-    setup_environment,
-    CONFIG,
-    VERTEX_AI_CONFIG,
-    MODEL_NAME,
-    GEN_MODEL,
-    GEN_MODEL_2,
-    INSTANCE_CONNECTION_NAME
-)
-
-# Optionally, you can define an __all__ variable to control what is accessible when the module is imported
-__all__ = [
-    'setup_environment',
-    'CONFIG',
-    'VERTEX_AI_CONFIG',
-    'MODEL_NAME',
-    'GEN_MODEL',
-    'GEN_MODEL_2',
-    'INSTANCE_CONNECTION_NAME'
-]
-
-
-import sys
-import os
-import json
-from langchain.chains import ConversationalRetrievalChain
-from langchain_community.llms import VertexAI
-from langchain_community.embeddings import VertexAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain.prompts import PromptTemplate
-from langchain.memory import ConversationBufferMemory
-
-# Ensure the config directory is in the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config')))
-
-# Import the configuration module
-import config
-
-# Initialize the environment
-config.setup_environment()
-
-class DocChain:
-    def __init__(self):
-        llm_config = config.VERTEX_AI_CONFIG['llm']
-        self.llm = VertexAI(
-            model_name=llm_config['model_name'],
-            project=config.CONFIG['PROJECT_ID'],
-            location=config.CONFIG['location'],
-            temperature=llm_config['temperature'],
-            max_output_tokens=llm_config['max_output_tokens']
-        )
-        self.embeddings = VertexAIEmbeddings(
-            model_name=config.MODEL_NAME,
-            project=config.CONFIG['PROJECT_ID'],
-            location=config.CONFIG['location']
-        )
-
-        index_store = config.CONFIG['index_store']
-        self.doc_vector_db = FAISS.load_local(index_store, self.embeddings, allow_dangerous_deserialization=True)
-
-        custom_prompt = """Task: Respond to the user's question by leveraging the provided context and chat history. When the answer requires detailed explanation, present the response in a structured, step-by-step format.
-
-        - User Query: {question}
-        - Context: {context}
-        - Chat History: {chat_history}
-
-        Instructions:
-        1. Review the user's query, the provided context, and the chat history to fully understand the user's needs and the conversation's background.
-        2. Determine if the user's query requires a simple answer or a detailed step-by-step explanation.
-        3. If a simple answer suffices, craft a clear and concise response based on the context and chat history.
-        4. If the query requires a detailed explanation, formulate the response in an organized, step-by-step manner to ensure clarity and ease of understanding.
-        5. Ensure that the response is coherent, follows the logical flow, and is directly relevant to the user's query.
-
-        Output:
-        - Response: [Generate a response that either directly answers the user's query or provides a detailed explanation in the form of steps, utilizing the context and chat history.]
-        """
-        self.custom_question_prompt = PromptTemplate(
-            input_variables=["chat_history", "context", "question"],
-            template=custom_prompt
-        )
-        self.memory = ConversationBufferMemory(
-            memory_key='chat_history',
-            return_docs=False,
-            return_messages=True,
-            input_key='question',
-            output_key='answer'
-        )
-
-        self.qa_chain = ConversationalRetrievalChain.from_llm(
-            llm=self.llm,
-            retriever=self.doc_vector_db.as_retriever(search_kwargs={'k': 5}),
-            verbose=True,
-            return_source_documents=True,
-            memory=self.memory,
-            combine_docs_chain_kwargs={"prompt": self.custom_question_prompt}
-        )
-
-    def retrieval_chain(self, user_input):
-        chat_history, question = user_input  # user input is a tuple of chat history and query
-        result = self.qa_chain({"question": question, "chat_history": chat_history})
-        return result['answer']
-
-    def upload_retrieval_chain(self, user_input, vector_db):
-        """For the uploaded document"""
-        chat_history, question = user_input  # user input is a tuple of chat history and query
-        chain = ConversationalRetrievalChain.from_llm(
-            llm=self.llm,
-            retriever=vector_db.as_retriever(search_kwargs={'k': 5}),
-            verbose=True,
-            return_source_documents=True,
-            memory=self.memory,
-            combine_docs_chain_kwargs={"prompt": self.custom_question_prompt}
-        )
-        result = chain({"question": question, "chat_history": chat_history})
-        return result['answer']
+    for blob_x in client.list_blobs(bucket_name):
+        print(blob_x)
+        if blob_x.name.endswith(latest_files[0].name) and blob_x.name.endswith(".pdf"):
+            content=blob_x.download_as_string()
+            pdf=io.BytesIO(content)
+            pdf_splitter = get_pdf_splits(pdf)
+            print(pdf_splitter)
+            break
+            # embed_index(pdf_splitter, embeddings, index_store)
+        if blob_x.name.endswith(latest_files[0].name) and blob_x.name.endswith(".docx"):
+            content=blob_x.download_as_string()
+            doc=io.BytesIO(content)
+            doc_splitter = extract_text_from_docx(doc)
+            print(doc_splitter)
+            # embed_index(doc_splitter, embeddings, index_store)
+            break
 
 
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
-sys.path.append(parent_dir)
+def db(data):
+    vectordb = Chroma.from_texts(data,embedding=VertexAIEmbeddings(model_name="textembedding-gecko@003",project = config['PROJECT_ID'], location = config['location']))
+    return vectordb
+
+
