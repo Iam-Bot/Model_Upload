@@ -979,3 +979,204 @@ if __name__ == "__main__":
     document_uploader.upload_documents()
 
 
+
+import os
+import json
+from google.cloud import bigquery
+from langchain.prompts import PromptTemplate
+from langchain_google_vertexai import VertexAI
+from langchain.chains import LLMChain
+import openpyxl
+import pandas as pd
+import re
+import matplotlib.pyplot as plt
+import seaborn as sns
+import io
+import base64
+import sys
+from io import StringIO
+#case
+with open('config.json') as f:
+    config = json.load(f)
+
+massmkt_cred = "adapt-data-dev-sa.json"
+massmkt_proj = "prj-adapt-data-dev-001"
+massmkt_dataset = "SALESFORCE_MASS_MARKEt"
+
+
+def retrieve_cases_data():
+
+    sql_query = f"""
+        SELECT CASENUMBER, SUBTYPE__C, STATUS, CASE_TYPE__C, CASE_CATEGORY__C, SERVICE_STATE__C,
+            CREATEDDATE
+        FROM `{massmkt_proj}.{massmkt_dataset}.CASE_MASS_MARKET`
+        WHERE CREATEDDATE >= TIMESTAMP('2024-03-29 00:00:00') 
+    """
+    client = bigquery.Client.from_service_account_json(massmkt_cred)
+
+    case_table = client.query(sql_query).to_dataframe()
+    return case_table
+
+
+
+def final_metrics(user_query): 
+    user_query = user_query[1]   
+    df_columns = ["CASENUMBER", "SUBTYPE__C", "STATUS", "CASE_TYPE__C", "CASE_CATEGORY__C", "SERVICE_STATE__C"]
+    def matplotlib_response(query):
+        
+        prompt_text = """
+        Considering the df and the Pseudo code that is provided to you, write an efficient & executable python code leveraging
+        matplotlib. Be mindful of the **column names** while using df
+        Find the below schema:
+        column names=["Column name": "CASENUMBER", "Example Value": "01326150", "Column name": "SUBTYPE__C", "Example Value":       "Generic Fallout", "Column name": "STATUS", "Example Value": "Closed", "Column name": "CASE_TYPE__C", "Example Value": "Support","Column name": "CASE_CATEGORY__C", "Example Value": "Guest", "Column name": "SERVICE_STATE__C", "Example Value": "Minnesota"]
+        dtype_mapping =['CASENUMBER': 'object', 'SUBTYPE__C': 'object', 'STATUS': 'object','CASE_TYPE__C': 'object', 'CASE_CATEGORY__C': 'object', 'SERVICE_STATE__C': 'object']
+        
+        - Follow the data types mapping strictly. Very crucial!
+        - Do not preprocess df. Do not handle missing values and duplicates. Follow this strictly.
+        - If there are more than one plots, collage all of them into one plot. This is priority!
+        Efficiency Instructions:
+        1. Optimize the code for execution time and resource utilization.
+        2. Leverage Gemini-Pro's advanced capabilities to streamline code generation.
+        3. Minimize unnecessary computations and iterations for improved efficiency.
+        4. Increase/decrease the size of the image accordingly, so that the graph is visible in the output
+        5. Handle any indentation errors and take care of them
+        6. Always add plt.xticks(rotation = 'vertical') since will will help see the graph better
+
+        Your task is to generate code based on the provided pseudocode, ensuring efficiency and adherence to instructions.
+        Pseudocode: {input}
+        Agent: 
+        """
+        prompt = PromptTemplate.from_template(prompt_text)
+        model = VertexAI(model='gemini-pro', max_output_tokens=1024)
+        chain = LLMChain(llm=model, prompt=prompt)
+
+        response = chain.run(input = query)
+        return response
+    
+    def process_user_query(query, df_columns):
+        prompt_text = """
+        - Rephrase the question if necessary
+        - Explain columns if the user query is unclear
+        - Dynamically add questions based on user query
+        - Give appropiate numeric values to the query , for example week means 7 days of data, month means 30 days of data and so on
+        """
+
+        # Preprocessing based on specific user queries
+        if "trends" in query.lower() and "subtype" in query.lower() and "year" in query.lower():
+            processed_query = f"What trends do you want to analyze over the year for the subtype for the columns: {', '.join(df_columns)}?"
+        elif "compare" in query.lower() and "categories" in query.lower() and "time period" in query.lower():
+            processed_query = f"Generate a comparative graph for the specified time period comparing different categories."
+        elif "distribution" in query.lower() and "variable" in query.lower():
+            processed_query = f"Plot the distribution of the specified variable."
+        elif "correlation" in query.lower() and "between" in query.lower() and "variables" in query.lower():
+            processed_query = f"Create a correlation heatmap to analyze the relationship between the specified variables."
+        else:
+            processed_query = query
+
+        return processed_query
+
+    processed_query = process_user_query(user_query, df_columns)
+
+    def pseudo_code(processed_query):
+        prompt_text = """
+        I have a dataframe with mutiple columns
+        You are a pseudo code generator. From the user query you will go into a chain of thoughts, which will include
+        1. Extracting User Queries:
+        - You will analyze the user query to extract its requirements and specifications.
+        - Identify the specific points raised by the user query.
+
+        2. Determining Output Structure:
+        - Based on the extracted user asks, decide how the output should be structured.
+        - Consider the format and layout of the output, ensuring it aligns with the user's needs.
+
+        3. Generating Pseudo Code:
+        - Generate **pseudo code** that reflects the decisions made regarding the output structure.
+        - Ensure the pseudo code accurately represents the logic required to fulfill the user query.
+        - Take care of the indentation errors in the dataframe or while loading the dataframe and take care of them
+        - Take care of different datatypes and adjust them accordingly
+        - Fill the None values with 0 if necessary
+
+    Please refrain from writing Python code; focus solely on creating pseudocode based on logical reasoning.
+        
+        Me: {input}
+        Agent:
+        """
+        prompt = PromptTemplate.from_template(prompt_text)
+        model = VertexAI(model='gemini-pro', max_output_tokens=1024)
+        chain = LLMChain(llm=model, prompt=prompt)
+
+        response = chain.run(input = processed_query)
+        return response
+
+    df = retrieve_cases_data()
+
+    def extract_code(input_string):
+        # Find the index of the first occurrence of "import"
+        import_index = input_string.find("import")
+        if import_index == -1:
+            # If "import" is not found, return the original string
+            return input_string
+
+        # Find the index of the first occurrence of "```" after the first occurrence of "import"
+        backticks_index = input_string.find("```", import_index)
+        if backticks_index == -1:
+            # If "```" is not found after "import", return the original string
+            return input_string
+
+        # Extract the code from the input string
+        extracted_code = input_string[import_index:backticks_index]
+
+        # Remove lines that start with "df = pd.read"
+        extracted_code_lines = extracted_code.split('\n')
+        cleaned_code_lines = [line for line in extracted_code_lines if not line.strip().startswith("df = pd.read")]
+
+        # Remove the line containing "plt.show()"
+        modified_code_lines = [line for line in cleaned_code_lines if "plt.show()" not in line]
+        
+        modified_code = '\n'.join(modified_code_lines)
+
+        return modified_code.replace('python','').replace('```python','')
+
+
+    def graphical_output(query: str):
+        print("entered graph chain")
+        pseudo_ = pseudo_code(processed_query)
+        python_code = matplotlib_response(pseudo_)
+        formatted_python_code = extract_code(python_code)
+        df = retrieve_cases_data()
+        print("case_data",df.head(1))
+        
+        printed_information = """"""  # List to store printed information
+        try:
+            # Redirect print statements to a StringIO object to capture printed information
+            my_result = StringIO()
+            sys.stdout = my_result  # Redirect stdout
+            exec(formatted_python_code)  # Execute the Python code
+            printed_information = my_result.getvalue().strip()  # Get printed information
+        except Exception as e:
+            # Handle exceptions
+            printed_information = f"An error occurred: {e}"
+        finally:
+            sys.stdout = sys.__stdout__  # Reset stdout
+        
+        # with open("outputs-dynamic/text_response.txt", "w") as file:
+        #     file.write(printed_information)
+        
+        try:
+            # Generate the plot
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png')
+            buffer.seek(0)
+            base64_encoded_plot = base64.b64encode(buffer.read()).decode()
+            return printed_information, base64_encoded_plot, formatted_python_code
+        except Exception as e:
+            # Handle exceptions
+            return printed_information, f"Error generating plot: {e}", formatted_python_code
+
+    printed_info, base64op, code = graphical_output(user_query)
+
+    # with open("outputs-dynamic/code.py", "w") as code_dynamic:
+    #     code_dynamic.write(code)
+    output={'images': [base64op],'texts': [printed_info]}
+    return json.dumps(output)
+
