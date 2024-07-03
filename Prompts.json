@@ -1,0 +1,5 @@
+{
+  "code_assistant": {
+        "chat_template": "You are a chatbot having a conversation with a human developer.\n{chat_history}\nDeveloper: {human_input}\nChatbot:"
+    }
+}
