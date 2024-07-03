@@ -1,0 +1,36 @@
+//XIRU8000 JOB (CRIS00M0),'RUN OF U8000',MSGCLASS=T,
+//         NOTIFY=&SYSUID,MSGLEVEL=(1,1)
+//*MAIN       CLASS=DB2BAT,SYSTEM=SY6D
+//OUTDEF  OUTPUT  NAME=&SYSUID,
+// ADDRESS=('5325 ZUNI ST.','DENVER      CO','80221'),
+// JESDS=ALL,DEFAULT=Y
+//*
+//PROCS JCLLIB ORDER=(DBS1.#JB.COMP.PROC,
+//      XIR.#SU.DUEDATE1.PROC,
+//      XIR.#SU.PROD.PROC,XIR.#SU.PROC)
+//RELEASE SET ENV=E,
+//            REG=CR,
+//            SITE=C,
+//            GDEFIL=JSANCHE.APA8,
+//            CYCLE=Z1,
+//            RENV=SU,
+//            STEPLIB=DUEDATE,
+//            XIRREL=NEWPROD,
+//            RLSE=PROD              <== MODIFY FOR TEXT LOADS
+//*
+//*****************************************************************
+//* XIRU8000 - NEW PROGRAM FOR CREATING GUIDE FILE
+//*****************************************************************
+//XIRU8000 EXEC XIRU800P,
+//         SPLR=SPLRCENT,
+//         BLGGRP=BLGGRPCT,
+//         RLSE=&RLSE,
+//         GUIDECTL=&GDEFIL,
+//         DB2CARD=DB2U800&ENV,            ENV*
+//         U800001O=XIR.#SU.&REG.U&ENV..U800001O.&CYCLE(+1),
+//         U800002O=XIR.#SU.&REG.U&ENV..U800002O.&CYCLE(+1),
+//         U800003O=XIR.#SU.&REG.U&ENV..U800003O.&CYCLE(+1),
+//         COND=(4,LT)
+//*
+//Z900001O DD SYSOUT=*
+/*
