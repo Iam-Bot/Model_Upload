@@ -1149,3 +1149,139 @@ if __name__ == "__main__":
     result = case_graph.final_metrics(user_query)
     print(result)
 
+
+
+
+
+
+code_ass.py:
+import logging
+import json
+from langchain.chains import LLMChain
+from langchain.memory import ConversationBufferMemory
+from langchain_core.prompts import PromptTemplate  
+from Config import get_vertex_ai_llm
+import warnings
+
+warnings.filterwarnings("ignore")
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+def load_prompts():
+    with open('prompts.json','rb') as file:
+        return json.load(file)
+prompts=load_prompts()
+
+class DeveloperChatbot:
+    """
+    A class for a chatbot using LangChain and VertexAI.
+    """
+    
+    def __init__(self, model, template):
+        """
+        Initialize the chatbot with given parameters.
+
+        Args:
+            model: The language model to use for generating responses.
+            template: The template for generating prompts.
+        """
+        self.prompt = PromptTemplate(
+            input_variables=["chat_history", "human_input"], template=template
+        )
+        self.memory = ConversationBufferMemory(memory_key="chat_history")
+        self.llm = model
+        self.llm_chain = LLMChain(llm=self.llm, prompt=self.prompt, memory=self.memory)
+        logging.info("Chatbot initialized successfully.")
+
+    def reset_memory(self):
+        """
+        Reset the memory for the conversation history.
+        """
+        self.memory.clear()
+        logging.info("Chatbot memory cleared.")
+
+    def handle_conversation(self, user_input):
+        """
+        Handle the conversation and generate responses.
+
+        Args:
+            user_input (str): The input from the user.
+
+        Returns:
+            str: The response from the chatbot.
+        """
+        if user_input.lower() == "quit":
+            logging.info("Conversation ended by user.")
+            return "Conversation ended."
+        
+        response = self.llm_chain.run(user_input)
+        return response
+
+# Define the chatbot template
+chat_template = prompts['code_assistant']['chat_template']
+
+# Initialize the chatbot instance
+chatbot = DeveloperChatbot(
+    model=get_vertex_ai_llm('llm2'),
+    template=chat_template
+)
+
+
+
+chatbot.reset_memory()
+
+
+config.py:
+import logging
+from langchain_google_vertexai import VertexAI
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Configuration dictionary to store settings for Vertex AI language models
+VERTEX_AI_CONFIG = {
+    "llm": {
+        "model_name": "gemini-1.0-pro-002",
+        "temperature": 0.5,
+        "max_output_tokens": 8192
+    },
+    "llm2":{
+        "model_name":"gemini-1.5-pro-001",
+        "temperature": 0.3,
+        "max_output_tokens": 8192
+    }
+}
+
+# Function to create LLM instances based on configurations
+def get_vertex_ai_llm(key):
+    """
+    Retrieves Vertex AI language model instances based on a given configuration key.
+
+    Args:
+        key (str): A string key to identify the model configuration.
+
+    Returns:
+        VertexAI: A configured instance of VertexAI.
+
+    Raises:
+        ValueError: If no configuration is found for the provided key.
+    """
+    logging.info(f"Retrieving Vertex AI LLM with key: {key}")
+    config = VERTEX_AI_CONFIG.get(key, {})
+    if not config:
+        logging.error(f"No configuration found for key: {key}")
+        raise ValueError(f"No configuration found for key: {key}")
+    logging.info(f"Configuration found for key: {key}, creating VertexAI instance")
+    return VertexAI(**config)
+
+
+prompt.json:
+{
+ "code_assistant": {
+ chat_template:"You are a chatbot having a conversation with a human developer. {chat_history} Developer: {human_input} Chatbot:"
+}
+}
