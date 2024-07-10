@@ -1317,3 +1317,9 @@ Example COBOL to Java conversion:
        DISPLAY 'Hello, World!'.
        STOP RUN.
 
+converted to java:
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
