@@ -1,0 +1,14 @@
+langchain_google_vertexai 
+pypdf
+openpyxl
+google-cloud-secret-manager
+seaborn 
+simple-salesforce
+google-cloud-aiplatform==1.48.0
+google-ai-generativelanguage
+google-api-core 
+google-generativeai
+langchain-experimental                
+langchain-google-genai                
+langchain-google-vertexai
+sqlalchemy
