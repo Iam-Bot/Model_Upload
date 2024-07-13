@@ -1324,19 +1324,4 @@ public class HelloWorld {
     }
 }
 
-pip install datetime
-pip install decimal
-pip install glob2
-pip install importlib
-pip install inspect
-pip install io
-pip install math
-pip install os
-pip install pathlib
-pip install random
-pip install requests
-pip install shutil
-pip install string
-pip install sys
-pip install tk
 
