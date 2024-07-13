@@ -1325,3 +1325,20 @@ public class HelloWorld {
 }
 
 
+Converting COBOL: ../examples/hellow84_array_2.cbl --> ../converted/
+Copybook NOT FOUND: EIB
+Aborting conversion!
+Traceback (most recent call last):
+  File "/home/jupyter/MF_Con/MF_Modernisation/src/cobra_main.py", line 29, in <module>
+    main(prefix)
+  File "/home/jupyter/MF_Con/MF_Modernisation/src/cobra_main.py", line 12, in main
+    parse_cobol_file(file, output_dir, prefix)
+  File "/home/jupyter/MF_Con/MF_Modernisation/src/parse_cobol_file.py", line 57, in parse_cobol_file
+    result = parse_line(line, current_division, name, first_time, current_line, next_few_lines)
+  File "/home/jupyter/MF_Con/MF_Modernisation/src/parse_cobol_file.py", line 221, in parse_line
+    result = parse_current_line(tmp, current_division, name, first_time, current_line, next_few_lines)
+  File "/home/jupyter/MF_Con/MF_Modernisation/src/parse_cobol_file.py", line 264, in parse_current_line
+    insert_copybook(name + PYTHON_EXT, EIB_COPYBOOK, current_line, name, current_line.current_section, next_few_lines, args)
+  File "/home/jupyter/MF_Con/MF_Modernisation/src/cobol_line_process.py", line 725, in insert_copybook
+    lines = result[0]
+TypeError: 'NoneType' object is not subscriptable
