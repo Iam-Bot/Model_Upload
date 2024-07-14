@@ -1516,3 +1516,140 @@ def summarize_text(text, recursion_level=0):
 with open("story.txt", "r") as f:
     text = f.read()
     print(summarize_text(text))
+
+
+
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import PromptTemplate
+from langchain_google_vertexai import VertexAI
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from langchain_core.tools import tool
+import vertexai
+import datetime
+import chardet
+from vertexai.preview.generative_models import caching
+from vertexai.preview.generative_models import GenerativeModel, SafetySetting, HarmBlockThreshold, HarmCategory
+import sentencepiece as spm
+
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "lumen-b-ctl-047-e2aeb24b0ea0.json"
+
+llm = VertexAI(model_name="gemini-1.5-pro-001", temperature=0.7)
+
+# Initialize SentencePiece tokenizer
+sp = spm.SentencePieceProcessor(model_file='spiece.model')
+
+def chunk_code(code):
+    code_tokens = sp.encode(code, out_type=str)
+    chunks = ["".join(code_tokens[i:i+4096]) for i in range(0, len(code_tokens), 4096)]
+    return chunks
+
+# Function to optimize script
+@tool
+def script_optimizer(snippet):
+    template = """You are an expert in COBOL and JCL. Your task is to optimize the provided COBOL and JCL scripts by removing unnecessary lines of code, such as comments, and reframing the given code.
+
+    snippet:
+    {snippet}
+    """
+    script_optimizer_llm = PromptTemplate.from_template(template) | llm | StrOutputParser()
+    response = script_optimizer_llm.invoke({"snippet": snippet})
+    return response
+
+# Function to convert script
+@tool
+def script_converter(response):
+    template = """Your task is to rewrite the given COBOL and JCL file in JAVA language.
+
+    snippet:
+    {snippet}
+    """
+    script_converter_llm = PromptTemplate.from_template(template) | llm | StrOutputParser()
+    response = script_converter_llm.invoke({"snippet": response})
+    return response
+
+# Function to validate code
+@tool
+def code_validator(response):
+    template = """You are an expert JAVA developer. Your task is to evaluate the given JAVA snippet and validate if it is error-free. If you find errors, rewrite the snippet.
+
+    JAVA:
+    {java_snippet}
+    """
+    script_validator_llm = PromptTemplate.from_template(template) | llm | JsonOutputParser()
+    response = script_validator_llm.invoke({"java_snippet": response})
+    return response
+
+def read_and_cache_cobol(file_path):
+    # Detect encoding
+    with open(file_path, 'rb') as file:
+        raw_data = file.read()
+        result = chardet.detect(raw_data)
+        encoding = result['encoding']
+
+    # Read the COBOL file with the detected encoding
+    with open(file_path, 'r', encoding=encoding) as file:
+        content = file.read()
+
+    # Cache the content
+    cached_content = caching.CachedContent.create(
+        model_name="gemini-1.5-pro-001",
+        system_instruction="Optimize the COBOL to Java conversion process.",
+        contents=[content],
+        ttl=datetime.timedelta(minutes=80),
+    )
+    
+    return content, cached_content
+
+template = """You are given COBOL and JCL snippets. Your task is to convert these snippets from mainframe to JAVA language. You have access to the following tools:
+
+{tools}
+
+Use the tools to help in migrating to JAVA.
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+COBOL & JCL Snippet:
+{cobol_snippet}
+
+Thought:{agent_scratchpad}"""
+
+prompt = PromptTemplate.from_template(template)
+tools = [script_optimizer, script_converter, code_validator]
+early_stop_llm = llm.bind(stop=["\nFinal Answer:", "Final Answer"])
+agent = create_react_agent(early_stop_llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors="Check your output and make sure it conforms! Do not output an action and a final answer at the same time.", max_iterations=9)
+
+# Read and cache COBOL content from file
+file_path = "XIRI1000.cbl"
+cobol_content, cached_content = read_and_cache_cobol(file_path)
+
+# Chunk the COBOL content
+cobol_chunks = chunk_code(cobol_content)
+
+final_java_code = ""
+
+# Process each chunk iteratively
+for chunk in cobol_chunks:
+    result = agent_executor.invoke({"cobol_snippet": chunk})
+    final_java_code += result["Final Answer"]
+
+# Print the final Java code
+print(final_java_code)
+
+pip install langchain
+pip install langchain-google-vertexai
+pip install google-cloud-aiplatform
+pip install chardet
+pip install sentencepiece
+
