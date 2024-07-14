@@ -1528,8 +1528,8 @@ import vertexai
 import datetime
 import chardet
 from vertexai.preview.generative_models import caching
-from vertexai.preview.generative_models import GenerativeModel, SafetySetting, HarmBlockThreshold, HarmCategory
 import sentencepiece as spm
+import os
 
 # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "lumen-b-ctl-047-e2aeb24b0ea0.json"
 
@@ -1558,7 +1558,40 @@ def script_optimizer(snippet):
 # Function to convert script
 @tool
 def script_converter(response):
-    template = """Your task is to rewrite the given COBOL and JCL file in JAVA language.
+    template = """Your task is to rewrite the given COBOL and JCL file in JAVA language. Follow these guidelines to ensure accurate and efficient conversion:
+
+1. **Code Structure and Segmentation**: Break down the COBOL/JCL script into manageable sections, such as individual programs, procedures, or paragraphs.
+
+2. **Semantic Mapping**: For each COBOL/JCL construct, find the equivalent Java construct. Ensure that procedural COBOL code is mapped to appropriate Java methods and classes.
+
+3. **Error Handling and Edge Cases**: Identify common error patterns and edge cases in COBOL and convert them to Java equivalents. Ensure robust error handling in the generated Java code.
+
+4. **Data Types and Variables**: Map COBOL data types to Java data types accurately. For example, convert COBOL's `PIC` clauses to Java's primitive types or classes.
+
+5. **Control Structures**: Convert COBOL control structures (e.g., `PERFORM`, `IF`, `EVALUATE`) to Java control structures (`for`, `while`, `if`, `switch`).
+
+6. **File Handling and I/O Operations**: Convert COBOL file handling operations (e.g., `OPEN`, `CLOSE`, `READ`, `WRITE`) to Java's file I/O classes (e.g., `FileReader`, `FileWriter`, `BufferedReader`, `BufferedWriter`).
+
+7. **Database Operations**: Map COBOL database operations (e.g., `EXEC SQL`) to Java's JDBC or ORM frameworks (e.g., Hibernate).
+
+8. **Comments and Documentation**: Retain and convert COBOL comments to Java comments. Provide additional comments to explain complex conversions or assumptions made during the process.
+
+Example COBOL to Java conversion:
+COBOL Code:
+```cobol
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO-WORLD.
+       PROCEDURE DIVISION.
+       DISPLAY 'Hello, World!'.
+       STOP RUN.
+Converted Java Code:
+```java
+      public class HelloWorld {{
+           public static void main(String[] args) {{
+                   System.out.println("Hello, World!");
+           }}
+      }}
+
 
     snippet:
     {snippet}
