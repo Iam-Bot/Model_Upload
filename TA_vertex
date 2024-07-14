@@ -1325,20 +1325,155 @@ public class HelloWorld {
 }
 
 
-Converting COBOL: ../examples/hellow84_array_2.cbl --> ../converted/
-Copybook NOT FOUND: EIB
-Aborting conversion!
-Traceback (most recent call last):
-  File "/home/jupyter/MF_Con/MF_Modernisation/src/cobra_main.py", line 29, in <module>
-    main(prefix)
-  File "/home/jupyter/MF_Con/MF_Modernisation/src/cobra_main.py", line 12, in main
-    parse_cobol_file(file, output_dir, prefix)
-  File "/home/jupyter/MF_Con/MF_Modernisation/src/parse_cobol_file.py", line 57, in parse_cobol_file
-    result = parse_line(line, current_division, name, first_time, current_line, next_few_lines)
-  File "/home/jupyter/MF_Con/MF_Modernisation/src/parse_cobol_file.py", line 221, in parse_line
-    result = parse_current_line(tmp, current_division, name, first_time, current_line, next_few_lines)
-  File "/home/jupyter/MF_Con/MF_Modernisation/src/parse_cobol_file.py", line 264, in parse_current_line
-    insert_copybook(name + PYTHON_EXT, EIB_COPYBOOK, current_line, name, current_line.current_section, next_few_lines, args)
-  File "/home/jupyter/MF_Con/MF_Modernisation/src/cobol_line_process.py", line 725, in insert_copybook
-    lines = result[0]
-TypeError: 'NoneType' object is not subscriptable
+
+
+from langchain.agents import AgentExecutor,create_react_agent
+from langchain_core.prompts import PromptTemplate
+from langchain_google_vertexai import VertexAI
+from langchain_core.output_parsers import StrOutputParser,JsonOutputParser
+from langchain_core.tools import tool
+from fastapi import WebSocket
+import git
+from git import Repo
+from langchain_core.prompts import PromptTemplate
+from langchain_community.document_loaders import Docx2txtLoader
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.chains.llm import LLMChain
+from langchain_google_vertexai import VertexAI
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains import StuffDocumentsChain, LLMChain
+from langchain.memory import ConversationBufferMemory, ConversationTokenBufferMemory, ConversationBufferMemory
+from docx import Document
+import chardet
+from langchain.chains.question_answering import load_qa_chain
+from langchain.text_splitter import CharacterTextSplitter
+import os
+import vertexai
+import datetime
+from vertexai.generative_models import Part
+from vertexai.preview import caching
+import vertexai
+from vertexai.preview.generative_models import GenerativeModel, SafetySetting, HarmBlockThreshold, HarmCategory
+
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "lumen-b-ctl-047-e2aeb24b0ea0.json"
+
+llm = VertexAI(model_name = "gemini-1.5-pro-001",temperature=0.7)
+
+#function to optimize script:
+@tool
+def script_optimizer(snippet):
+        # """Used for optimizing cobol and jcl snippets"""
+        template = """You are an expert in COBOL and JCL, you are provided with the COBOL and JCL scripts, you task is to optimize and remove unnecessary lines of code such as comments and reframe the given code.
+
+        snippet:
+        {snippet}
+
+        """
+
+        script_optimizer_llm = PromptTemplate.from_template(template) | llm | StrOutputParser()
+        response = script_optimizer_llm.invoke({"snippet":snippet})
+        return response
+
+@tool
+def script_converter(response):
+        # """Useful for converting cobol and jcl snippets to JAVA language"""
+        template = """Your task is to rewrite the given COBAL and JCL file in JAVA language, you have the COBAL and JCL file given below:
+
+        snippet:
+        {snippet}
+
+        """
+        
+        script_converter_llm = PromptTemplate.from_template(template) | llm | StrOutputParser()
+        response = script_converter_llm.invoke({"snippet":response})
+        return response
+
+@tool
+def code_validator(response):
+    #"""Useful for validating JAVA code"""
+    template = """You are an expert JAVA developer, your task is to evaluate the given JAVA snippet and validated if it is error free.If you find errors then rewrite the snippet.
+        Do not respond with an invalid JAVA snippet.
+        
+        JAVA:
+        {java_snippet}
+        
+        """
+    
+    script_validator_llm = PromptTemplate.from_template(template) | llm | JsonOutputParser()
+    response = script_validator_llm.invoke({"java_snippet":response})
+    return response
+
+cobol_snippet = """IDENTIFICATION DIVISION.
+PROGRAM-ID HELLO.
+
+DATA DIVISION.
+    WORKING-STORAGE SECTION.
+    01 WS-A PIC 9 VALUE 2.
+    
+PROCEDURE DIVISION.
+    A-PARA.
+    DISPLAY 'IN A-PARA'
+    GO TO B-PARA.
+    
+    B-PARA.
+    DISPLAY 'IN B-PARA '.
+    GO TO C-PARA D-PARA DEPENDING ON WS-A.
+    
+    C-PARA.
+    DISPLAY 'IN C-PARA '.
+    
+    D-PARA.
+    DISPLAY 'IN D-PARA '.
+    STOP RUN."""
+jcl_snippet = """//SAMPLE JOB(TESTJCL,XXXXXX),CLASS = A,MSGCLASS = C
+//STEP1 EXEC PGM = HELLO"""
+
+template = """You are given with COBOL and JCL snippet, the task is to convert these snippet from mainframe to JAVA language. You have access to the following tools:
+
+{tools}
+
+Use the tools to help in migrating to JAVA.
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+COBOL & JCL Snippet:
+{cobol_snippet}
+
+
+Thought:{agent_scratchpad}"""
+prompt = PromptTemplate.from_template(template)
+tools = [script_optimizer,script_converter,code_validator]
+early_stop_llm = llm.bind(stop=["\nFinal Answer:","Final Answer"])
+agent = create_react_agent(early_stop_llm,tools,prompt)
+agent_executor = AgentExecutor(agent=agent,tools = tools,verbose=True,handle_parsing_errors="Check your output and make sure it conforms! Do not output an action and a final answer at the same time.",max_iterations=9)
+
+z = agent_executor.invoke({"cobol_snippet":cobol_snippet})
+
+file_path = "XIRI1000.cbl"
+with open(file_path, 'rb') as file:
+    raw_data = file.read()
+    result = chardet.detect(raw_data)
+    encoding = result['encoding']
+
+# Read the COBOL file with the detected encoding
+with open(file_path, 'r', encoding=encoding) as file:
+    content = file.read()
+
+cached_content = caching.CachedContent.create(
+    model_name="gemini-1.5-pro-001",
+    system_instruction=repo_prompt1,
+    contents=[content],
+    ttl=datetime.timedelta(minutes=80),
+) 
+
