@@ -1686,3 +1686,13 @@ pip install google-cloud-aiplatform
 pip install chardet
 pip install sentencepiece
 
+
+
+from vertexai.preview.generative_models import GenerativeModel as genai
+
+generation_config=genai.types.GenerationConfig(
+                    candidate_count=1,
+                    max_output_tokens=8192,
+                    temperature=self.temperature
+                ),
+AttributeError: type object 'GenerativeModel' has no attribute 'types'
