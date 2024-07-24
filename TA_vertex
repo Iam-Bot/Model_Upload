@@ -3549,3 +3549,28 @@ code-2.cbl:
            CALL 'XIRE100' USING E1000LK1.
        E100-EXIT.
            EXIT.
+
+
+
+ValueError: Cannot get the response text.
+Cannot get the Candidate text.
+Response candidate content has no parts (and thus no text). The candidate is likely blocked by the safety filters.
+Content:
+{}
+Candidate:
+{
+  "finish_reason": "OTHER"
+}
+Response:
+{
+  "candidates": [
+    {
+      "finish_reason": "OTHER"
+    }
+  ],
+  "usage_metadata": {
+    "prompt_token_count": 7100,
+    "candidates_token_count": 1,
+    "total_token_count": 7101
+  }
+}
