@@ -3090,3 +3090,462 @@ code-2.cbl:
 055300*            E N D  O F  X I R B 5 1 0 0  M O D U L E           * 05530000
 055400***************************************************************** 05540000
 
+
+
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. XIRB5100.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       
+       COPY PROP0AA0.
+
+       01 XIRB5100-WORKING-STORAGE.
+           05 XIRB5100-LITERALS.
+               10 WS-PROGRAM-NAME-LIT     PIC X(8) VALUE 'XIRB5100'.
+           05 WS-ERROR-LTRL.
+               15 GOOD-RETURN            PIC X(4) VALUE '0000'.
+               15 ABND-3954              PIC X(4) VALUE '3954'.
+               15 ABND-3908              PIC X(4) VALUE '3908'.
+               15 ABND-3999              PIC X(4) VALUE '3999'.
+           05 WS-ERRR-CD.
+               20 LTRL-1                 PIC X(10) VALUE 'ERRR-CD ='.
+               20 ERRR-CD                PIC X(4).
+           05 ERROR-DISPLY-FIELD-MESSAGES.
+               15 WS-RESOURCE-MSG        PIC X(50) VALUE 'RESOURCE UNAVAILABLE - MAX. RETRY EXCEEDED'.
+               15 WS-XIRB096Y-MSG        PIC X(50) VALUE 'XIRB093Y IS JOIN VIEW OF APA1 & APA2      '.
+           05 WS-PARAGRAPH-LITERALS.
+               15 LT-1200                PIC X(4) VALUE '1200'.
+               15 LT-1310                PIC X(4) VALUE '1310'.
+               15 LT-1320                PIC X(4) VALUE '1320'.
+               15 LT-2010                PIC X(4) VALUE '2110'.
+               15 LT-2020                PIC X(4) VALUE '2120'.
+               15 LT-2030                PIC X(4) VALUE '2130'.
+               15 LT-C100                PIC X(4) VALUE 'C100'.
+               15 LT-F100                PIC X(4) VALUE 'F100'.
+               15 LT-K100                PIC X(4) VALUE 'K100'.
+               15 LT-W100                PIC X(4) VALUE 'W100'.
+               15 LT-9200                PIC X(4) VALUE '9200'.
+               15 LT-9300                PIC X(4) VALUE '9300'.
+           05 WS-NUMERIC-LITERALS.
+               15 WS-0                   PIC 9(1) VALUE 0.
+               15 WS-1                   PIC 9(1) VALUE 1.
+           05 WS-REGION-LITERALS.
+               15 LT-CENTRAL             PIC X(8) VALUE 'CENTRAL '.
+           05 WS-RESOURCE-SWITCH        PIC X(01).
+               88 RESOURCE-AVAILABLE    VALUE 'Y'.
+               88 RESOURCE-NOT-AVAILABLE VALUE 'N'.
+           05 WS-CONTINUE               PIC X(01).
+               88 WS-CONTINUE-YES       VALUE 'Y'.
+               88 WS-CONTINUE-NO        VALUE 'N'.
+           05 LT-DB2-RETURN-CODES.
+               15 LT-NORMAL-RETURN      PIC S9(9) COMP VALUE ZEROES.
+               15 LT-REC-FOUND          PIC S9(9) COMP VALUE ZEROES.
+               15 LT-REC-NOT-FOUND      PIC S9(9) COMP VALUE +100.
+               15 LT-DUPL-INSERT        PIC S9(9) COMP VALUE -803.
+               15 LT-DUPL-ROWS          PIC S9(9) COMP VALUE -811.
+               15 LT-DEADLOCK           PIC S9(9) COMP VALUE -911.
+           05 LT-ALPHA-RETURN-CODES     PIC X(4).
+               10 LT-SUCCESSFUL         PIC X(4) VALUE '0000'.
+               10 LT-NOT-FOUND          PIC X(4) VALUE '0100'.
+               10 LT-100                PIC X(4) VALUE '0100'.
+           05 WS-XIRB096Y-VIEW          PIC X(08) VALUE 'XIRB096Y'.
+           05 XIRB5100-SWITCHES-AND-FLAGS.
+               COPY IRRWKSWT.
+               10 WS-FILE-EOF-SWITCH            PIC X(01).
+                   88 FILE-EOF                  VALUE 'Y'.
+                   88 NOT-FILE-EOF              VALUE 'N'.
+               10 WS-RETRY-IND                  PIC X(01).
+                   88 WS-RETRY-SUCCESSFUL       VALUE 'Y'.
+                   88 WS-RETRY-NOT-SUCCESSFUL   VALUE 'N'.
+               10 WS-ST-CD-DSB5-ROWS-IND        PIC X VALUE SPACES.
+                   88 ST-CD-DSB5                VALUE 'Y'.
+                   88 NO-ST-CD-DSB5             VALUE 'N'.
+               10 WS-ACTION-TYPE                PIC X(01).
+                   88 OPEN-CNTL                 VALUE 'O'.
+                   88 READ-CNTL                 VALUE 'R'.
+                   88 CLOSE-CNTL                VALUE 'C'.
+               10 WS-APPLCN-RGN-ID-FLAG         PIC X(08) VALUE SPACES.
+                   88 CENTRAL                   VALUE 'CENTRAL '.
+               10 WS-XIRB096Y-SWITCH            PIC X(08) VALUE SPACES.
+                   88 MORE-XIRB096Y-ROWS        VALUE 'Y'.
+                   88 NO-MORE-XIRB096Y-ROWS     VALUE 'N'.
+           05 XIRB5100-SAVE-AREAS.
+               COPY IRRWKMIS.
+               10 WS-CURR-PRCSS-CY-DATE         PIC X(10)  VALUE SPACES.
+               10 WS-BILL-PER-CD1               PIC X(03)  VALUE SPACES.
+               10 WS-BILL-PER-CD2               PIC X(03)  VALUE SPACES.
+               10 WS-TEMP-TIME-STMP.
+                   15 WS-TEMP-TIME-STMP-CC      PIC X(2).
+                   15 WS-TEMP-TIME-STMP-YR      PIC X(2).
+                   15 FILLER                    PIC X.
+                   15 WS-TEMP-TIME-STMP-MO      PIC X(2).
+                   15 FILLER                    PIC X.
+                   15 WS-TEMP-TIME-STMP-DY      PIC X(2).
+                   15 FILLER                    PIC X.
+                   15 WS-TEMP-TIME-STMP-HR      PIC X(2).
+                   15 FILLER                    PIC X.
+                   15 WS-TEMP-TIME-STMP-MN      PIC X(2).
+                   15 FILLER                    PIC X.
+                   15 WS-TEMP-TIME-STMP-SC      PIC X(2).
+                   15 FILLER                    PIC X(7).
+               10 WS-FRMT-C4000-DAT.
+                   15 WS-FRMT-C4000-CC          PIC X(2).
+                   15 WS-FRMT-C4000-YR          PIC X(2).
+                   15 FILLER                    PIC X VALUE '-'.
+                   15 WS-FRMT-C4000-MO          PIC X(2).
+                   15 FILLER                    PIC X VALUE '-'.
+                   15 WS-FRMT-C4000-DY          PIC X(2).
+               10 WS-FRMT-C4000-TIM.
+                   15 WS-FRMT-C4000-HR          PIC X(2).
+                   15 FILLER                    PIC X VALUE '.'.
+                   15 WS-FRMT-C4000-MN          PIC X(2).
+                   15 FILLER                    PIC X VALUE '.'.
+                   15 WS-FRMT-C4000-SC          PIC X(2).
+               10 WS-S232-CYCLE-DAY             PIC X(02).
+               10 WS-S232-USG-ID                PIC X(26).
+               10 WS-S232-TRMSN-SEQ-NO          PIC 9(02).
+               10 WS-APPLCN-LOCN-ID             PIC X(20)  VALUE SPACES.
+               10 WS-APPLCN-BLG-GR-ID           PIC X(12)  VALUE SPACES.
+               10 WS-RETRY-CT                   PIC S9(04) COMP VALUE ZEROES.
+               10 ERR-CODE                      PIC X(04)  VALUE SPACES.
+               10 WS-REC-WRITE-CNT              PIC 9(13)  VALUE ZEROS.
+               10 WS-XIRB096Y-CNTR              PIC 9(09)  VALUE ZEROS.
+
+       LINKAGE SECTION.
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+           PERFORM 1000-BEGIN-PROGRAM THRU 1000-EXIT.
+           PERFORM 2000-MAIN-PROCESS THRU 2000-EXIT.
+           PERFORM 9000-END-PROGRAM.
+           GOBACK.
+
+       1000-BEGIN-PROGRAM.
+           PERFORM 1100-INITIALIZATION THRU 1100-EXIT.
+           PERFORM 1200-CALL-Z1000 THRU 1200-EXIT.
+           PERFORM 1300-CALL-C1000 THRU 1300-EXIT.
+           PERFORM 1400-INIT-C4000LK1 THRU 1400-EXIT.
+           PERFORM 1500-PROCESS-HDR-REC THRU 1500-EXIT.
+       1000-EXIT.
+           EXIT.
+
+       1100-INITIALIZATION.
+           COPY NDVRAUDT.
+           INITIALIZE XIRB5100-SAVE-AREAS
+                      C1000LK1
+                      C2000LK1
+                      C4000LK1
+                      C5000LK1
+                      V4010LK1
+                      E1000LK1
+                      Z9000LK1.
+           SET OPEN-FILE TO TRUE
+           PERFORM P100-PROCESS-REPORT THRU P100-EXIT.
+       1100-EXIT.
+           EXIT.
+
+       1200-CALL-Z1000.
+           INITIALIZE Z1000LK1.
+           CALL XIRZ1000 USING Z1000LK1.
+           EVALUATE TRUE
+               WHEN RTRN-CD OF Z1000LK1 = ZEROS
+                   MOVE DB2-FMAT-DAT-TMSTMP OF Z1000LK1 TO WS-TEMP-TIME-STMP
+               WHEN OTHER
+                   MOVE LT-1200 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE RTRN-CD OF Z1000LK1 TO ERRR-CD OF E1000LK1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+           MOVE DB2-FMAT-DAT-TMSTMP OF Z1000LK1 TO WS-TEMP-TIME-STMP.
+       1200-EXIT.
+           EXIT.
+
+       1300-CALL-C1000.
+           PERFORM 1310-SELECT-SPLR.
+           PERFORM UNTIL RTRN-CD OF C1000LK1 IS NOT = ZEROS
+               PERFORM 1320-C2000-PREREQUISITES
+               PERFORM 1310-SELECT-SPLR
+           END-PERFORM.
+       1300-EXIT.
+           EXIT.
+
+       1310-SELECT-SPLR.
+           CALL XIRC1000 USING C1000LK1.
+           EVALUATE TRUE
+               WHEN RTRN-CD OF C1000LK1 = ZEROS
+                   MOVE SPLR-ID OF C1000LK1 TO SPLR-ID OF C2000LK1
+                   MOVE APPLCN-BLG-GR-ID OF C1000LK1 TO APPLCN-BLG-GR-ID OF C2000LK1
+               WHEN RTRN-CD OF C1000LK1 = SQL-ALL-ROWS-ACCESSED
+                   CONTINUE
+               WHEN OTHER
+                   MOVE LT-1310 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE RTRN-CD OF C1000LK1 TO ERRR-CD OF E1000LK1
+                   MOVE CMMN-SQLCA OF C1000LK1 TO CMMN-SQLCA OF Z9000LK1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+       1310-EXIT.
+           EXIT.
+
+       1320-C2000-PREREQUISITES.
+           MOVE SPLR-ID OF C1000LK1 TO SPLR-ID OF C2000LK1.
+           MOVE LT-FUNC-ID TO FUNC-ID OF C2000LK1.
+           MOVE WS-TEMP-TIME-STMP TO PROG-STRT-TMSTMP OF C2000LK1.
+           CALL XIRC2000 USING C2000LK1.
+           EVALUATE TRUE
+               WHEN RTRN-CD OF C2000LK1 = ZEROS
+                   PERFORM C900-COMMIT
+               WHEN OTHER
+                   MOVE LT-1320 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE RTRN-CD OF C2000LK1 TO ERRR-CD OF E1000LK1
+                   MOVE CMMN-SQLCA OF C2000LK1 TO CMMN-SQLCA OF Z9000LK1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+       1320-EXIT.
+           EXIT.
+
+       1400-INIT-C4000LK1.
+           MOVE SPLR-ID OF C2000LK1 TO SPLR-ID OF C4000LK1.
+           MOVE LT-FUNC-ID TO FUNC-ID OF C4000LK1.
+           MOVE WS-PROGRAM-NAME-LIT TO PROG-ID OF C4000LK1.
+           MOVE DB2-FMAT-DAT-TMSTMP TO PROG-STRT-TMSTMP OF C4000LK1.
+           MOVE APPLCN-RGN-ID OF C2000LK1 TO APPLCN-RGN-ID OF C4000LK1.
+           MOVE APPLCN-LOCN-ID OF C2000LK1 TO APPLCN-LOCN-ID OF C4000LK1.
+           MOVE APPLCN-BLG-GR-ID OF C2000LK1 TO APPLCN-BLG-GR-ID OF C4000LK1.
+           MOVE CURR-PRCSS-CY-NO OF C2000LK1 TO PRCSS-CY-NO OF C4000LK1.
+           MOVE DB2-FMAT-DAT-TMSTMP OF Z1000LK1 TO WS-TEMP-TIME-STMP.
+           MOVE WS-TEMP-TIME-STMP-CC TO WS-FRMT-C4000-CC.
+           MOVE WS-TEMP-TIME-STMP-YR TO WS-FRMT-C4000-YR.
+           MOVE WS-TEMP-TIME-STMP-MO TO WS-FRMT-C4000-MO.
+           MOVE WS-TEMP-TIME-STMP-DY TO WS-FRMT-C4000-DY.
+           MOVE WS-TEMP-TIME-STMP-HR TO WS-FRMT-C4000-HR.
+           MOVE WS-TEMP-TIME-STMP-MN TO WS-FRMT-C4000-MN.
+           MOVE WS-TEMP-TIME-STMP-SC TO WS-FRMT-C4000-SC.
+       1400-EXIT.
+           EXIT.
+
+       1500-PROCESS-HDR-REC.
+           SET WRITE-FILE TO TRUE.
+           SET RCD-ID-TYP OF BILL-ARGMT-HDR TO TRUE.
+           MOVE CURR-SYS-DAT OF C2000LK1 TO CURR-SYS-DAT OF BILL-ARGMT-HDR.
+           MOVE CURR-SYS-TM OF C2000LK1 TO CURR-SYS-TM OF BILL-ARGMT-HDR.
+           MOVE ZEROS TO SEQ-CNTRL-NO OF BILL-ARGMT-HDR.
+           MOVE WS-PROGRAM-NAME-LIT TO ORIG-PROG-ID OF BILL-ARGMT-HDR.
+           MOVE CURR-PRCSS-CY-NO OF C2000LK1 TO CURR-PRCSS-CY-NO OF BILL-ARGMT-HDR.
+           MOVE CURR-PRCSS-CY-DAT OF C2000LK1 TO CURR-PRCSS-CY-DAT OF BILL-ARGMT-HDR.
+           MOVE APPLCN-LOCN-ID OF C2000LK1 TO APPLCN-LOCN-ID OF BILL-ARGMT-HDR.
+           MOVE SPACES TO FIL-TYP OF BILL-ARGMT-HDR.
+           MOVE SPACES TO EFF-DAT OF BILL-ARGMT-HDR.
+           MOVE SPACES TO CARR-CIC-CODE OF BILL-ARGMT-HDR.
+           ADD WS-1 TO WS-REC-WRITE-CNT.
+           PERFORM W100-PERFORM-WRITE-REPORT THRU W100-EXIT.
+       1500-EXIT.
+           EXIT.
+
+       2000-MAIN-PROCESS.
+           PERFORM 2010-DECLARE-OPEN-XIRB096Y THRU 2010-EXIT.
+           SET MORE-XIRB096Y-ROWS TO TRUE.
+           PERFORM 2020-FETCH-XIRB096Y THRU 2020-EXIT.
+           PERFORM UNTIL NO-MORE-XIRB096Y-ROWS
+               PERFORM 2040-PROCESS-DET-REC THRU 2040-EXIT
+               PERFORM 2020-FETCH-XIRB096Y THRU 2020-EXIT
+           END-PERFORM.
+           PERFORM 2030-CLOSE-XIRB096Y THRU 2030-EXIT.
+           PERFORM 2050-PROCESS-TRL-REC THRU 2050-EXIT.
+       2000-EXIT.
+           EXIT.
+
+       2010-DECLARE-OPEN-XIRB096Y.
+           MOVE APPLCN-LOCN-ID OF C2000LK1 TO APPLCN-LOCN-ID OF XIRB096Y.
+           MOVE APPLCN-BLG-GR-ID OF C2000LK1 TO APPLCN-BLG-GR-ID OF XIRB096Y.
+           MOVE BILL-PER-CD1 OF C2000LK1 TO WS-BILL-PER-CD1.
+           MOVE BILL-PER-CD2 OF C2000LK1 TO WS-BILL-PER-CD2.
+           EXEC SQL
+               INCLUDE XIRB96C0
+           END-EXEC.
+           SET RESOURCE-NOT-AVAILABLE TO TRUE.
+           MOVE ZERO TO WS-RETRY-CT.
+           PERFORM C100-PARA2010-SQL THRU C100-EXIT
+               UNTIL RESOURCE-AVAILABLE
+               OR WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1.
+           IF WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1
+               MOVE LT-2010 TO PROG-PAR-NO OF Z9000LK1
+               MOVE ABND-3999 TO ERRR-CD OF E1000LK1
+               SET ERRR-IDX TO 1
+               MOVE WS-RESOURCE-MSG TO ERRR-DISPL-FLDS(ERRR-IDX)
+               MOVE SQLCA TO SQLCA-AR OF Z9000LK1
+               MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1
+               PERFORM E100-CALL-ERRORS
+           END-IF.
+       2010-EXIT.
+           EXIT.
+
+       2020-FETCH-XIRB096Y.
+           SET RESOURCE-NOT-AVAILABLE TO TRUE.
+           MOVE ZERO TO WS-RETRY-CT.
+           PERFORM F100-PARA2020-SQL THRU F100-EXIT
+               UNTIL RESOURCE-AVAILABLE
+               OR WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1.
+           IF WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1
+               MOVE ABND-3999 TO ERRR-CD OF E1000LK1
+               SET ERRR-IDX TO 1
+               MOVE WS-RESOURCE-MSG TO ERRR-DISPL-FLDS(ERRR-IDX)
+               MOVE SQLCA TO SQLCA-AR OF Z9000LK1
+               MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1
+               MOVE LT-2020 TO PROG-PAR-NO OF Z9000LK1
+               PERFORM E100-CALL-ERRORS
+           END-IF.
+       2020-EXIT.
+           EXIT.
+
+       2030-CLOSE-XIRB096Y.
+           MOVE +1 TO WS-RETRY-CT.
+           SET RESOURCE-NOT-AVAILABLE TO TRUE.
+           PERFORM K100-PARA2030-SQL THRU K100-EXIT
+               UNTIL RESOURCE-AVAILABLE
+               OR WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1.
+           IF WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1
+               MOVE ABND-3999 TO ERRR-CD OF E1000LK1
+               SET ERRR-IDX TO 1
+               MOVE WS-RESOURCE-MSG TO ERRR-DISPL-FLDS(ERRR-IDX)
+               MOVE SQLCA TO SQLCA-AR OF Z9000LK1
+               MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1
+               MOVE LT-2030 TO PROG-PAR-NO OF Z9000LK1
+               PERFORM E100-CALL-ERRORS
+           END-IF.
+       2030-EXIT.
+           EXIT.
+
+       2040-PROCESS-DET-REC.
+           SET RCD-ID-TYP OF BILL-ARGMT-DET TO TRUE.
+           MOVE CUST-BLG-ACCT-ID OF XIRB096Y TO CUST-BLG-ACCT-ID OF BILL-ARGMT-DET.
+           MOVE BILL-PER-CD OF XIRB096Y TO BILL-PER-CD OF BILL-ARGMT-DET.
+           PERFORM W100-PERFORM-WRITE-REPORT THRU W100-EXIT.
+           ADD WS-1 TO WS-REC-WRITE-CNT.
+       2040-EXIT.
+           EXIT.
+
+       2050-PROCESS-TRL-REC.
+           SET RCD-ID-TYP OF BILL-ARGMT-TRL TO TRUE.
+           MOVE CURR-SYS-DAT OF C2000LK1 TO CURR-SYS-DAT OF BILL-ARGMT-TRL.
+           MOVE CURR-SYS-TM OF C2000LK1 TO CURR-SYS-TM OF BILL-ARGMT-TRL.
+           MOVE ZEROS TO SEQ-CNTRL-NO OF BILL-ARGMT-TRL.
+           MOVE WS-PROGRAM-NAME-LIT TO ORIG-PROG-ID OF BILL-ARGMT-TRL.
+           MOVE CURR-PRCSS-CY-NO OF C2000LK1 TO CURR-PRCSS-CY-NO OF BILL-ARGMT-TRL.
+           MOVE CURR-PRCSS-CY-DAT OF C2000LK1 TO CURR-PRCSS-CY-DAT OF BILL-ARGMT-TRL.
+           MOVE APPLCN-LOCN-ID OF C2000LK1 TO APPLCN-LOCN-ID OF BILL-ARGMT-TRL.
+           MOVE SPACES TO FIL-TYP OF BILL-ARGMT-TRL.
+           MOVE SPACES TO EFF-DAT OF BILL-ARGMT-TRL.
+           MOVE SPACES TO CARR-CIC-CODE OF BILL-ARGMT-TRL.
+           ADD WS-1 TO WS-REC-WRITE-CNT.
+           MOVE WS-REC-WRITE-CNT TO TRMTD-NO OF BILL-ARGMT-TRL.
+           PERFORM W100-PERFORM-WRITE-REPORT THRU W100-EXIT.
+       2050-EXIT.
+           EXIT.
+
+       C100-PARA2010-SQL.
+           EXEC SQL
+               INCLUDE XIRB96O0
+           END-EXEC.
+           EVALUATE SQLCODE OF SQLCA
+               WHEN SQL-CALL-SUCCESSFUL
+                   SET RESOURCE-AVAILABLE TO TRUE
+               WHEN SQL-SYSTEM-ERROR
+               WHEN SQL-DEADLOCK
+                   ADD 1 TO WS-RETRY-CT
+               WHEN OTHER
+                   MOVE ABND-3999 TO ERRR-CD OF E1000LK1
+                   MOVE SQLCA TO SQLCA-AR OF Z9000LK1
+                   MOVE LT-C100 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+       C100-EXIT.
+           EXIT.
+
+       F100-PARA2020-SQL.
+           EXEC SQL
+               INCLUDE XIRB96F0
+           END-EXEC.
+           EVALUATE SQLCODE OF SQLCA
+               WHEN SQL-CALL-SUCCESSFUL
+                   ADD WS-1 TO WS-XIRB096Y-CNTR
+                   SET MORE-XIRB096Y-ROWS TO TRUE
+                   SET RESOURCE-AVAILABLE TO TRUE
+               WHEN SQL-ROW-NOT-FOUND
+                   SET RESOURCE-AVAILABLE TO TRUE
+                   SET NO-MORE-XIRB096Y-ROWS TO TRUE
+               WHEN SQL-SYSTEM-ERROR
+               WHEN SQL-DEADLOCK
+                   ADD WS-1 TO WS-RETRY-CT
+               WHEN OTHER
+                   MOVE ABND-3954 TO ERRR-CD OF E1000LK1
+                   MOVE SQLCA TO SQLCA-AR OF Z9000LK1
+                   MOVE LT-F100 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+       F100-EXIT.
+           EXIT.
+
+       K100-PARA2030-SQL.
+           EXEC SQL
+               INCLUDE XIRB96K0
+           END-EXEC.
+           EVALUATE SQLCODE OF SQLCA
+               WHEN SQL-CALL-SUCCESSFUL
+                   SET RESOURCE-AVAILABLE TO TRUE
+               WHEN SQL-SYSTEM-ERROR
+               WHEN SQL-DEADLOCK
+                   ADD 1 TO WS-RETRY-CT
+               WHEN OTHER
+                   MOVE ABND-3999 TO ERRR-CD OF E1000LK1
+                   MOVE SQLCA TO SQLCA-AR OF Z9000LK1
+                   MOVE LT-K100 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+       K100-EXIT.
+           EXIT.
+
+       P100-PROCESS-REPORT.
+           EVALUATE TRUE
+               WHEN OPEN-FILE
+                   OPEN OUTPUT FD-B510001O
+               WHEN WRITE-FILE
+                   WRITE I-O-RECORD
+               WHEN CLOSE-FILE
+                   CLOSE FD-B510001O
+               WHEN OTHER
+                   MOVE LT-W100 TO PROG-PAR-NO OF Z9000LK1
+                   MOVE ABND-3908 TO ERRR-CD OF E1000LK1
+                   MOVE SPLR-ID OF C2000LK1 TO SPLR-ID OF E1000LK1
+                   SET ERRR-IDX TO 1
+                   MOVE WS-RESOURCE-MSG TO ERRR-DISPL-FLDS(ERRR-IDX)
+                   SET ERRR-IDX UP BY 1
+                   PERFORM E100-CALL-ERRORS
+           END-EVALUATE.
+       P100-EXIT.
+           EXIT.
+
+       W100-PERFORM-WRITE-REPORT.
+           PERFORM P100-PROCESS-REPORT THRU P100-EXIT.
+       W100-EXIT.
+           EXIT.
+
+       C900-COMMIT.
+           EXEC SQL COMMIT END-EXEC.
+       C900-EXIT.
+           EXIT.
+
+       9000-END-PROGRAM.
+           PERFORM P100-PROCESS-REPORT THRU P100-EXIT.
+           SET CLOSE-FILE TO TRUE.
+           GOBACK.
+
+       E100-CALL-ERRORS.
+           CALL 'XIRE100' USING E1000LK1.
+       E100-EXIT.
+           EXIT.
