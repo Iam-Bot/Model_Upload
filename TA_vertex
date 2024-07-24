@@ -1686,7 +1686,7 @@ pip install google-cloud-aiplatform
 pip install chardet
 pip install sentencepiece
 
-code.cbl - 1:
+code-1.cbl:
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. LDB2SAMP.
