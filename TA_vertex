@@ -1686,13 +1686,1407 @@ pip install google-cloud-aiplatform
 pip install chardet
 pip install sentencepiece
 
+code.cbl - 1:
 
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LDB2SAMP.
+       
+       DATA DIVISION.
+       
+       WORKING-STORAGE SECTION.
+       
+       EXEC SQL INCLUDE SQLCA END-EXEC.
+       
+      *COPY EMPLOYEE.
+       01 EMPLOYEE.
+         05 EMPNO PIC X(6).
+         05 FIRSTNME.
+           49 LEN PIC S9(4) COMP-5.
+           49 DAT PIC X(12).
+         05 MIDINIT PIC X(1).
+         05 LASTNAME.
+           49 LEN PIC S9(4) COMP-5.
+           49 DAT PIC X(15).
+         05 WORKDEPT PIC X(3).
+         05 PHONENO PIC X(4).
+         05 HIREDATE PIC X(10).
+         05 JOB PIC X(8).
+         05 EDLEVEL PIC S9(4) COMP-5.
+         05 SEX PIC X(1).
+         05 BIRTHDATE PIC X(10).
+         05 SALARY PIC S9(7)V9(2) COMP-3.
+         05 BONUS PIC S9(7)V9(2) COMP-3.
+         05 COMM PIC S9(7)V9(2) COMP-3.       
+       
+       01 VARIABLES.
+           02 RECORDCOUNT        PIC S9(8) USAGE COMP-3.
+           02 DISPLAYRC          PIC S9(4) USAGE DISPLAY.                      
+           02 OUT                PIC X(200).       
+           02 NEXTEMP            PIC X(6).       
+           02 NEXTEMPNO          PIC 9(6).
+           02 FIRSTNMEP          PIC X(12).
+           02 LASTNAMEP          PIC X(15).
+       
+              
+       LINKAGE SECTION. 
+       
+       PROCEDURE DIVISION.
+       
+           MOVE LOW-VALUES TO VARIABLES.
+       
+           EXEC SQL SELECT COUNT (*)
+                           INTO :RECORDCOUNT
+                           FROM EMPLOYEE                               
+                           END-EXEC.
+           
+           IF SQLCODE = 0 THEN                                         
+               MOVE RECORDCOUNT TO DISPLAYRC
+               MOVE "THE NUMBER OF EMPLOYEES IN THE DATABASE IS " TO OUT        
+               MOVE DISPLAYRC TO OUT(44:4)  
+           ELSE IF SQLCODE = 100 THEN
+               MOVE "NO EMPLOYEES FOUND IN DATABASE" TO OUT
+           ELSE
+               MOVE "SQL ERROR " TO OUT
+               MOVE SQLCODE TO OUT(11:10)
+           END-IF.
+           
+           DISPLAY OUT.
+           
+           IF SQLCODE = 0 THEN
+               EXEC SQL SELECT MAX (EMPNO) 
+                               INTO :NEXTEMP
+                               FROM EMPLOYEE                    
+                               END-EXEC
+                           
+               MOVE NEXTEMP TO NEXTEMPNO
+               
+               COMPUTE NEXTEMPNO = NEXTEMPNO + 10
+               
+               MOVE NEXTEMPNO TO EMPNO
+               MOVE "FRANK" TO FIRSTNMEP 
+               MOVE "JONES" TO LASTNAMEP 
+               MOVE "Y" TO MIDINIT 
+               MOVE "A00" TO WORKDEPT 
+               MOVE "1234" TO PHONENO 
+               MOVE "04-30-1979" TO HIREDATE 
+               MOVE "Clerk" TO JOB 
+               MOVE 15 TO EDLEVEL 
+               MOVE "M" TO SEX 
+               MOVE "05-30-1954" TO BIRTHDATE 
+               MOVE "36170" TO SALARY 
+               MOVE "400" TO BONUS 
+               MOVE "2387" TO COMM  
+               
+               EXEC SQL INSERT INTO EMPLOYEE 
+                               VALUES(:EMPNO,
+                                      :FIRSTNMEP,
+                                      :MIDINIT,
+                                      :LASTNAMEP,                               
+                                      :WORKDEPT,
+                                      :PHONENO,
+                                      :HIREDATE,
+                                      :JOB,
+                                      :EDLEVEL,
+                                      :SEX,
+                                      :BIRTHDATE,
+                                      :SALARY,
+                                      :BONUS,
+                                      :COMM)
+                               END-EXEC
+                               
+               IF SQLCODE = 0 THEN
+                  EXEC SQL SELECT *
+                           INTO :EMPNO,
+                                :FIRSTNME,
+                                :MIDINIT,
+                                :LASTNAME,                                      
+                                :WORKDEPT,
+                                :PHONENO,
+                                :HIREDATE,
+                                :JOB,
+                                :EDLEVEL,
+                                :SEX,
+                                :BIRTHDATE,
+                                :SALARY,
+                                :BONUS,
+                                :COMM
+                           FROM EMPLOYEE
+                           WHERE EMPNO = :EMPNO
+                           END-EXEC
+                           
+                  EXEC SQL COMMIT END-EXEC
+                           
+                  MOVE FIRSTNMEP TO OUT
+                  MOVE LASTNAMEP TO OUT(14:15)
+                  DISPLAY OUT
+                  DISPLAY "ADDED TO THE DATABASE"
+                           
+               ELSE
+                  MOVE "SQL ERROR" TO OUT
+                  DISPLAY OUT
+               END-IF
+                               
+           END-IF.
+                
+       
+           GOBACK.
 
-from vertexai.preview.generative_models import GenerativeModel as genai
+code-2.cbl:
 
-generation_config=genai.types.GenerationConfig(
-                    candidate_count=1,
-                    max_output_tokens=8192,
-                    temperature=self.temperature
-                ),
-AttributeError: type object 'GenerativeModel' has no attribute 'types'
+000100 IDENTIFICATION DIVISION.                                         00010000
+000200 PROGRAM-ID.    XIRB5100.                                         00020000
+000300 AUTHOR.        REGIONAL INVOICE BILLING.                         00030000
+000400 DATE-WRITTEN.  JULY 20, 2011.                                    00040000
+000500 DATE-COMPILED.                                                   00050000
+000600 SECURITY.                                                        00060000
+000700 COPY PROP0AA0.                                                   00070000
+000800                                                                  00080000
+000900     EJECT                                                        00090000
+001000***************************************************************** 00100000
+001100*           D E S C R I P T I O N  O F  P R O G R A M           * 00110000
+001200*                                                               * 00120000
+001300* PROGRAM ID:      XIRB5100                                     * 00130000
+001400*                                                               * 00140000
+001500* PROGRAM NAME:    CTL BILLARRANGMENT FILE CREATION             * 00150000
+001600*                                                               * 00160000
+001900* PURPOSE:         TO CREATE THE BILL ARRANGEMENT FILE FOR      * 00190000
+002000*                  CENTURYLINK-DTV BY READING TABLES XY4APA1T   * 00200000
+002100*                  AND XX4APA2T AS INPUTS.                      * 00210000
+002200*                                                               * 00220000
+002300* DESCRIPTION:     XIRB5100 PROGRAM, WHICH WILL READ XY4APA1T & * 00230000
+002400*                  XX4APA2T FOR DIRECTV-CENTURYLINK             * 00240000
+002500*                  (SPLR ID 9930) TO RETRIEVE THE BAN AND       * 00250000
+002600*                  BILL_PER_CD FOR CUSTOMERS BILLING THIS CYCLE,* 00260000
+002700*                  XIRB5100 WILL CREATE A B510001O OUTPUT FILE  * 00270000
+002800*                  THAT WILL BE USED AS INPUT INTO CENTURYLINK  * 00280000
+002900*                  JOB XCLB0500 - PROGRAM XIRB0500.             * 00290000
+003100*                                                               * 00310000
+003200* FREQUENCY:   AFTER XIRU1000 & XIRU3000 RUN.                  *  00320000
+003300*                                                               * 00330000
+003400* INPUT/OUTPUT:                                                 * 00340000
+003500*                                                               * 00350000
+003600*   PARAMETER                               POSSIBLE            * 00360000
+003700*      CARD           DESCRIPTION            VALUES    REQUIRED * 00370000
+003800*   ---------   -------------------------   ---------  -------- * 00380000
+003900*   C100001I    SUPPLIER CARD                            YES    * 00390000
+004000*                                                               * 00400000
+004100*     TABLE    TABLE                                    ACCESS  * 00410000
+004200*     VIEW     NAME         TABLE DESCRIPTION            TYPE   * 00420000
+004300*   --------- -------- -----------------------------   -------- * 00430000
+004400*   XIRB096Y           BILL PERIOD CODE                SELECT   * 00440000
+004700*                                                               * 00470000
+004800*                                                               * 00480000
+004900*                                                   SORT        * 00490000
+005000*   FILE ID            RECORD NAME              SPECIFICATION   * 00500000
+005100*   --------   -----------------------------    --------------- * 00510000
+005300*   B510001O    BILL ARRANGEMENT                                * 00530000
+005400                                                                * 00540000
+005500* ASSOCIATED PROGRAMS:                                          * 00550000
+005600*                                                               * 00560000
+005700*             PROGRAM ID   PROGRAM NAME                         * 00570000
+005800*             ----------   ----------------------------------   * 00580000
+005900*  CALLED BY: SYSTEM                                            * 00590000
+006000*  CALLS:     XIRZ1000     PROGRAM START TIME                   * 00600000
+006100*             XIRZ7000     COMMON TRAIT LOOKUP                  * 00610000
+006200*             XIRE1000     ERROR PROCESSING                     * 00620000
+006300*             XIRC1000     PROGRAM.CONTROLS - SELECT SUPPLIERS  * 00630000
+006400*             XIRC2000     PROGRAM.CONTROLS - VALIDATE          * 00640000
+006410*                          DEPENDENCIES                         * 00641000
+006500*             XIRC4000     PROGRAM.CONTROLS - END OF SUPPLIER   * 00650000
+006600*             XIRC5000     PROGRAM.CONTROLS - END OF JOB        * 00660000
+006610*             XIRZ9000     ABEND PROCESSING                     * 00661000
+006620*             XIRM11B0     MANAGED DATA DATE CONVERSION MODULE  * 00662000
+006700*                                                               * 00670000
+006800***************************************************************** 00680000
+006900     EJECT                                                        00690000
+007000***************************************************************** 00700000
+007100***                                                           *** 00710000
+007200***            P R O G R A M     H I S T O R Y                *** 00720000
+007300***                                                           *** 00730000
+007400***************************************************************** 00740000
+007500*              M O D I F I C A T I O N   L O G                  * 00750000
+007600***************************************************************** 00760000
+007700* RELEASE  TR/PTID                                              * 00770000
+007800*    #        #    AUTHOR   DATE    MODIFICATION DESCRIPTION    * 00780000
+007900***************************************************************** 00790000
+008000* R110915  RCBS CD  UXKHAN  11/07/20 INITIAL RELEASE.           * 00800000
+008100*    NEO#  0024546         (YY/MM/DD)                           * 00810000
+008200*                                                               * 00820000
+008210* R111208    UCHANDR     12/08/11     CHANGES TO MOVE           * 00821000
+008220* NEO 0025220                         APPLCN-BLG-GR-ID FROM     * 00822000
+008230* RCBS B5339801                       C1000LK1 TO C2000LK1      * 00823000
+008240* R150820    UCHANDR     15/05/14     PROCESS DATA FOR MIXED    * 00824000
+008250* PR0001197                           AND CTL DTV CUSTOMERS     * 00825000
+008260* RCBS B5339801                                                 * 00826000
+008300***************************************************************** 00830000
+008400     EJECT                                                        00840000
+008500***************************************************************** 00850000
+008600* E N V I R O N M E N T  D I V I S I O N                          00860000
+008700***************************************************************** 00870000
+008800                                                                  00880000
+008900 ENVIRONMENT DIVISION.                                            00890000
+009000 CONFIGURATION SECTION.                                           00900000
+009100   SOURCE-COMPUTER.   IBM-3090.                                   00910000
+009200   OBJECT-COMPUTER.   IBM-3090.                                   00920000
+009300                                                                  00930000
+009400 INPUT-OUTPUT SECTION.                                            00940000
+009500                                                                  00950000
+009600 FILE-CONTROL.                                                    00960000
+009700                                                                  00970000
+010230     SELECT FD-B510001O                                           01023000
+010240            ASSIGN TO B510001O                                    01024000
+010250            ORGANIZATION IS SEQUENTIAL                            01025000
+010260            ACCESS MODE IS SEQUENTIAL.                            01026000
+010270                                                                  01027000
+010300***************************************************************** 01030000
+010400* D A T A  D I V I S I O N                                      * 01040000
+010500***************************************************************** 01050000
+010600                                                                  01060000
+010700 DATA DIVISION.                                                   01070000
+010800 FILE SECTION.                                                    01080000
+010900***************************************************************** 01090000
+011000* D A T E  C O N T R O L  C A R D                               * 01100000
+011100***************************************************************** 01110000
+011200 FD  FD-B510001O                                                  01120000
+011300     BLOCK CONTAINS 0                                             01130000
+011400     LABEL RECORDS ARE STANDARD                                   01140000
+011500     RECORDING MODE IS V.                                         01150000
+011600***************************************************************** 01160000
+011610*   B I L L  A R R A N G E M E N T  F I L E  R E C  L A Y O U T * 01161000
+011620***************************************************************** 01162000
+011630 01   I-O-RECORD.                                                 01163000
+011640      03 RCD-DA                  PIC X(220).                      01164000
+011650                                                                  01165000
+011660      03   BILL-ARGMT-HDR        REDEFINES RCD-DA.                01166000
+011670 COPY IRZ0001I.                                                   01167000
+011680    EJECT                                                         01168000
+011690                                                                  01169000
+011691      03   BILL-ARGMT-DET        REDEFINES RCD-DA.                01169100
+011692 COPY IRU0001I.                                                   01169200
+011693    EJECT                                                         01169300
+011694                                                                  01169400
+011695      03   BILL-ARGMT-TRL        REDEFINES RCD-DA.                01169500
+011696 COPY IRZ9999I.                                                   01169600
+011697     EJECT                                                        01169700
+012000*                                                                 01200000
+012100***************************************************************** 01210000
+012200* W O R K I N G - S T O R A G E  S E C T I O N                  * 01220000
+012210***************************************************************** 01221000
+012220 WORKING-STORAGE SECTION.                                         01222000
+012230 COPY NDVRWKST.                                                   01223000
+012240                                                                  01224000
+012250 01  XIRB5100-WORKING-STORAGE.                                    01225000
+012260     05  XIRB5100-LITERALS.                                       01226000
+012270         10  WS-PROGRAM-NAME-LIT     PIC X(8) VALUE 'XIRB5100'.   01227000
+012290***************************************************************** 01229000
+012300*   CALLED MODULES                                              * 01230000
+012310***************************************************************** 01231000
+012320         10  XIRZ1000                PIC X(8) VALUE 'XIRZ1000'.   01232000
+012330         10  XIRZ7000                PIC X(8) VALUE 'XIRZ7000'.   01233000
+012340         10  XIRE1000                PIC X(8) VALUE 'XIRE1000'.   01234000
+012350         10  XIRC1000                PIC X(8) VALUE 'XIRC1000'.   01235000
+012360         10  XIRC2000                PIC X(8) VALUE 'XIRC2000'.   01236000
+012370         10  XIRC4000                PIC X(8) VALUE 'XIRC4000'.   01237000
+012380         10  XIRC5000                PIC X(8) VALUE 'XIRC5000'.   01238000
+012381         10  XIRZ9000                PIC X(8) VALUE 'XIRZ9000'.   01238100
+012382         10  XIRM11B0                PIC X(8) VALUE 'XIRM11B0'.   01238200
+012400         10  LT-FUNC-ID              PIC X(8) VALUE 'BILLPULL'.   01240000
+012401         10  WS-B510001O             PIC X(8) VALUE 'B510001O'.   01240100
+012410     EJECT                                                        01241000
+012420***************************************************************** 01242000
+012430*   ERROR AREA                                                  * 01243000
+012440***************************************************************** 01244000
+012450         10  WS-ERROR-LTRL.                                       01245000
+012451             15 GOOD-RETURN          PIC X(4) VALUE '0000'.       01245100
+012452             15 ABND-3954            PIC X(4) VALUE '3954'.       01245200
+012453             15 ABND-3908            PIC X(4) VALUE '3908'.       01245300
+012454             15 ABND-3999            PIC X(4) VALUE '3999'.       01245400
+012460                                                                  01246000
+012470             15  WS-ERRR-CD.                                      01247000
+012480                 20  LTRL-1          PIC X(10) VALUE 'ERRR-CD ='. 01248000
+012490                 20  ERRR-CD         PIC X(4).                    01249000
+012500                                                                  01250000
+012730         10  ERROR-DISPLY-FIELD-MESSAGES.                         01273000
+012731             15 WS-RESOURCE-MSG      PIC X(50) VALUE              01273100
+012732                'RESOURCE UNAVAILABLE - MAX. RETRY EXCEEDED'.     01273200
+012733                                                                  01273300
+012741             15 WS-XIRB096Y-MSG      PIC X(50) VALUE              01274100
+012742                'XIRB093Y IS JOIN VIEW OF APA1 & APA2      '.     01274200
+012750                                                                  01275000
+012760     EJECT                                                        01276000
+012770                                                                  01277000
+012780***************************************************************** 01278000
+012790*   LITERALS                                                    * 01279000
+012800***************************************************************** 01280000
+012900         10  WS-PARAGRAPH-LITERALS.                               01290000
+013000             15 LT-1200                    PIC X(4) VALUE '1200'. 01300000
+013100             15 LT-1310                    PIC X(4) VALUE '1310'. 01310000
+013200             15 LT-1320                    PIC X(4) VALUE '1320'. 01320000
+013220             15 LT-2010                    PIC X(4) VALUE '2110'. 01322000
+013230             15 LT-2020                    PIC X(4) VALUE '2120'. 01323000
+013240             15 LT-2030                    PIC X(4) VALUE '2130'. 01324000
+013260             15 LT-C100                    PIC X(4) VALUE 'C100'. 01326000
+013270             15 LT-F100                    PIC X(4) VALUE 'F100'. 01327000
+013280             15 LT-K100                    PIC X(4) VALUE 'K100'. 01328000
+013290             15 LT-W100                    PIC X(4) VALUE 'W100'. 01329000
+013291             15 LT-9200                    PIC X(4) VALUE '9200'. 01329100
+013292             15 LT-9300                    PIC X(4) VALUE '9300'. 01329200
+013300                                                                  01330000
+013400         10  WS-NUMERIC-LITERALS.                                 01340000
+013401             15 WS-0                       PIC 9(1) VALUE 0.      01340100
+013402             15 WS-1                       PIC 9(1) VALUE 1.      01340200
+013403                                                                  01340300
+013410         10  WS-REGION-LITERALS.                                  01341000
+013500             15 LT-CENTRAL                 PIC X(8)               01350000
+013510                                           VALUE 'CENTRAL '.      01351000
+013600                                                                  01360000
+013700     EJECT                                                        01370000
+013800***************************************************************** 01380000
+013900*   SQL CODES                                                   * 01390000
+014000***************************************************************** 01400000
+014100 COPY SQLCODES.                                                   01410000
+014200             15  SQL-MULTIPLE-ROWS     PIC S9(9) VALUE -811.      01420000
+014300         10  WS-RESOURCE-SWITCH        PIC X(01).                 01430000
+014400             88  RESOURCE-AVAILABLE     VALUE 'Y'.                01440000
+014500             88  RESOURCE-NOT-AVAILABLE VALUE 'N'.                01450000
+014600         10  WS-CONTINUE               PIC X(01).                 01460000
+014700             88  WS-CONTINUE-YES        VALUE 'Y'.                01470000
+014800             88  WS-CONTINUE-NO         VALUE 'N'.                01480000
+014900                                                                  01490000
+015000     EJECT                                                        01500000
+015100***************************************************************** 01510000
+015200*    D B 2   R E T U R N   C O D E S                            * 01520000
+015300***************************************************************** 01530000
+015400         10  LT-DB2-RETURN-CODES.                                 01540000
+015500             15  LT-NORMAL-RETURN   PIC S9(9) COMP VALUE ZEROES.  01550000
+015600             15  LT-REC-FOUND       PIC S9(9) COMP VALUE ZEROES.  01560000
+015700             15  LT-REC-NOT-FOUND   PIC S9(9) COMP VALUE +100.    01570000
+015800             15  LT-DUPL-INSERT     PIC S9(9) COMP VALUE -803.    01580000
+015900             15  LT-DUPL-ROWS       PIC S9(9) COMP VALUE -811.    01590000
+016000             15  LT-DEADLOCK        PIC S9(9) COMP VALUE -911.    01600000
+016100         10  LT-ALPHA-RETURN-CODES  PIC X(4).                     01610000
+016200         10  LT-SUCCESSFUL          PIC X(4)  VALUE '0000'.       01620000
+016300         10  LT-NOT-FOUND           PIC X(4)  VALUE '0100'.       01630000
+016400         10  LT-100                 PIC X(4)  VALUE '0100'.       01640000
+016500                                                                  01650000
+016600     EJECT                                                        01660000
+016700                                                                  01670000
+016800***************************************************************** 01680000
+016900*        V I E W   A N D   F I L E   N A M E S                  * 01690000
+017000***************************************************************** 01700000
+017100                                                                  01710000
+017120         10  WS-XIRB096Y-VIEW         PIC X(08)  VALUE 'XIRB096Y'.01712000
+017280                                                                  01728000
+017290     EJECT                                                        01729000
+017291***************************************************************** 01729100
+017292* W O R K I N G  S T O R A G E  S W I T C H E S  &  F L A G S   * 01729200
+017293***************************************************************** 01729300
+017294     05  XIRB5100-SWITCHES-AND-FLAGS.                             01729400
+017295 COPY IRRWKSWT.                                                   01729500
+017296                                                                  01729600
+017297         10 WS-FILE-EOF-SWITCH             PIC X(01).             01729700
+017298             88  FILE-EOF                   VALUE 'Y'.            01729800
+017299             88  NOT-FILE-EOF               VALUE 'N'.            01729900
+017300                                                                  01730000
+017301         10 WS-RETRY-IND                   PIC X(01).             01730100
+017302             88  WS-RETRY-SUCCESSFUL       VALUE 'Y'.             01730200
+017303             88  WS-RETRY-NOT-SUCCESSFUL   VALUE 'N'.             01730300
+017304                                                                  01730400
+017305         10 WS-ST-CD-DSB5-ROWS-IND         PIC X VALUE SPACES.    01730500
+017306            88 ST-CD-DSB5                     VALUE 'Y'.          01730600
+017307            88 NO-ST-CD-DSB5                  VALUE 'N'.          01730700
+017308                                                                  01730800
+017309         10 WS-ACTION-TYPE                 PIC X(01).             01730900
+017310             88  OPEN-CNTL                 VALUE 'O'.             01731000
+017311             88  READ-CNTL                 VALUE 'R'.             01731100
+017312             88  CLOSE-CNTL                VALUE 'C'.             01731200
+017313                                                                  01731300
+017314         10 WS-APPLCN-RGN-ID-FLAG          PIC X(08) VALUE SPACES.01731400
+017315             88  CENTRAL                   VALUE 'CENTRAL '.      01731500
+017316                                                                  01731600
+017317         10 WS-XIRB096Y-SWITCH             PIC X(08) VALUE SPACES.01731700
+017318             88  MORE-XIRB096Y-ROWS        VALUE 'Y'.             01731800
+017319             88  NO-MORE-XIRB096Y-ROWS     VALUE 'N'.             01731900
+017320                                                                  01732000
+017321     EJECT                                                        01732100
+017322                                                                  01732200
+017323***************************************************************** 01732300
+017324* W O R K I N G  S T O R A G E  M I S C E L L A N E O U S       * 01732400
+017325***************************************************************** 01732500
+017326     05  XIRB5100-SAVE-AREAS.                                     01732600
+017327 COPY IRRWKMIS.                                                   01732700
+017328                                                                  01732800
+017330         10  WS-CURR-PRCSS-CY-DATE      PIC X(10)  VALUE SPACES.  01733000
+017331         10  WS-BILL-PER-CD1            PIC X(03)  VALUE SPACES.  01733100
+017332         10  WS-BILL-PER-CD2            PIC X(03)  VALUE SPACES.  01733200
+017340*                                                                 01734000
+017350         10 WS-TEMP-TIME-STMP.                                    01735000
+017360            15 WS-TEMP-TIME-STMP-CC   PIC X(2).                   01736000
+017370            15 WS-TEMP-TIME-STMP-YR   PIC X(2).                   01737000
+017380            15 FILLER                 PIC X.                      01738000
+017390            15 WS-TEMP-TIME-STMP-MO   PIC X(2).                   01739000
+017391            15 FILLER                 PIC X.                      01739100
+017392            15 WS-TEMP-TIME-STMP-DY   PIC X(2).                   01739200
+017393            15 FILLER                 PIC X.                      01739300
+017394            15 WS-TEMP-TIME-STMP-HR   PIC X(2).                   01739400
+017395            15 FILLER                 PIC X.                      01739500
+017396            15 WS-TEMP-TIME-STMP-MN   PIC X(2).                   01739600
+017397            15 FILLER                 PIC X.                      01739700
+017398            15 WS-TEMP-TIME-STMP-SC   PIC X(2).                   01739800
+017399            15 FILLER                 PIC X(7).                   01739900
+017400                                                                  01740000
+017401         10 WS-FRMT-C4000-DAT.                                    01740100
+017402            15 WS-FRMT-C4000-CC       PIC X(2).                   01740200
+017403            15 WS-FRMT-C4000-YR       PIC X(2).                   01740300
+017404            15 FILLER                 PIC X VALUE '-'.            01740400
+017405            15 WS-FRMT-C4000-MO       PIC X(2).                   01740500
+017406            15 FILLER                 PIC X VALUE '-'.            01740600
+017407            15 WS-FRMT-C4000-DY       PIC X(2).                   01740700
+017408                                                                  01740800
+017409         10 WS-FRMT-C4000-TIM.                                    01740900
+017410            15 WS-FRMT-C4000-HR       PIC X(2).                   01741000
+017411            15 FILLER                 PIC X VALUE '.'.            01741100
+017412            15 WS-FRMT-C4000-MN       PIC X(2).                   01741200
+017413            15 FILLER                 PIC X VALUE '.'.            01741300
+017414            15 WS-FRMT-C4000-SC       PIC X(2).                   01741400
+017415                                                                  01741500
+017416         10  WS-S232-CYCLE-DAY        PIC X(02).                  01741600
+017417         10  WS-S232-USG-ID           PIC X(26).                  01741700
+017418         10  WS-S232-TRMSN-SEQ-NO     PIC 9(02).                  01741800
+017419*                                                                 01741900
+017420         10  WS-APPLCN-LOCN-ID        PIC X(20)  VALUE SPACES.    01742000
+017421         10  WS-APPLCN-BLG-GR-ID      PIC X(12)  VALUE SPACES.    01742100
+017422         10  WS-RETRY-CT              PIC S9(04) COMP             01742200
+017423                                                 VALUE ZEROES.    01742300
+017424         10  ERR-CODE                 PIC X(04)  VALUE SPACES.    01742400
+017425         10  WS-REC-WRITE-CNT         PIC 9(13)  VALUE ZEROS.     01742500
+017426         10  WS-XIRB096Y-CNTR         PIC 9(09)  VALUE ZEROS.     01742600
+017430  EJECT                                                           01743000
+017440                                                                  01744000
+017450***************************************************************** 01745000
+017460*   LINKAGE WITH XIRC1000 - SELECT SUPPLIER                     * 01746000
+017470***************************************************************** 01747000
+017480 01 C1000LK1.                                                     01748000
+017490 COPY C1000LK1.                                                   01749000
+017491     EJECT                                                        01749100
+017492                                                                  01749200
+017493***************************************************************** 01749300
+017494*   LINKAGE WITH XIRC2000 - VALIDATE DEPENDENCIES               * 01749400
+017495***************************************************************** 01749500
+017496 01 C2000LK1.                                                     01749600
+017497 COPY C2000LK1.                                                   01749700
+017498     EJECT                                                        01749800
+017499                                                                  01749900
+017500***************************************************************** 01750000
+017501*   A S S O C I A T E  R E C O R D  C O M M O N  L I N K A G E  * 01750100
+017502***************************************************************** 01750200
+017503 01  V4010LK1.                                                    01750300
+017504 COPY V4010LK1.                                                   01750400
+017505     EJECT                                                        01750500
+017506                                                                  01750600
+017507***************************************************************** 01750700
+017508*   LINKAGE WITH XIRC4000 - END OF SUPPLIERS CONTROLS           * 01750800
+017509***************************************************************** 01750900
+017510 01 C4000LK1.                                                     01751000
+017511 COPY C4000LK1.                                                   01751100
+017512     EJECT                                                        01751200
+017513                                                                  01751300
+017514***************************************************************** 01751400
+017515*   LINKAGE WITH XIRC5000 - END OF JOB CONTROLS                 * 01751500
+017516***************************************************************** 01751600
+017517 01 C5000LK1.                                                     01751700
+017518 COPY C5000LK1.                                                   01751800
+017519     EJECT                                                        01751900
+017520                                                                  01752000
+017521***************************************************************** 01752100
+017522*   LINKAGE WITH XIRE1000 - COMMON ERROR PROCESSING             * 01752200
+017523***************************************************************** 01752300
+017524 01   E1000LK1.                                                   01752400
+017525 COPY E1000LK1.                                                   01752500
+017526     EJECT                                                        01752600
+017527                                                                  01752700
+017528***************************************************************** 01752800
+017529*   LINKAGE WITH XIRZ1000 - DB2 TIMESTAMP ROUTINE               * 01752900
+017530***************************************************************** 01753000
+017531 01 Z1000LK1.                                                     01753100
+017532 COPY Z1000LK1.                                                   01753200
+017533     EJECT                                                        01753300
+017534                                                                  01753400
+017535***************************************************************** 01753500
+017536*   LINKAGE WITH XIRZ9000 - COMMON ABEND ROUTINE                * 01753600
+017537***************************************************************** 01753700
+017538 01   Z9000LK1.                                                   01753800
+017539 COPY Z9000LK1.                                                   01753900
+017540     EJECT                                                        01754000
+017541                                                                  01754100
+017542***************************************************************** 01754200
+017543* S Q L  A R E A                                                * 01754300
+017544***************************************************************** 01754400
+017545     EXEC SQL                                                     01754500
+017546          INCLUDE SQLCA                                           01754600
+017547     END-EXEC.                                                    01754700
+017548     EJECT                                                        01754800
+017549                                                                  01754900
+017558***************************************************************** 01755800
+017559* XIRB096V - APA1 AND APA2                                      * 01755900
+017560***************************************************************** 01756000
+017561     EXEC SQL                                                     01756100
+017562          INCLUDE XIRB096Y                                        01756200
+017563     END-EXEC.                                                    01756300
+017565     EJECT                                                        01756500
+017566                                                                  01756600
+017567***************************************************************** 01756700
+017568* P R O C E D U R E    D I V I S I O N                          * 01756800
+017570***************************************************************** 01757000
+017580 PROCEDURE DIVISION.                                              01758000
+017590***************************************************************** 01759000
+017600*                0000 MAINLINE                                  * 01760000
+017610*                                                               * 01761000
+017620*    THIS IS THE MAIN PARAGRAPH IN THE PROGRAM.                 * 01762000
+017630*                                                               * 01763000
+017640*                                                               * 01764000
+017650*    PARAGRAPHS CALLED:  1000 BEGIN PROGRAM                     * 01765000
+017660*                        2000 MAIN PROCESS                      * 01766000
+017670*                        9000 END PROGRAM                       * 01767000
+017680*                                                               * 01768000
+017690***************************************************************** 01769000
+017691 0000-MAINLINE.                                                   01769100
+017692                                                                  01769200
+017693     PERFORM 1000-BEGIN-PROGRAM THRU 1000-EXIT.                   01769300
+017694                                                                  01769400
+017695     PERFORM 2000-MAIN-PROCESS THRU 2000-EXIT.                    01769500
+017696                                                                  01769600
+017697     PERFORM 9000-END-PROGRAM.                                    01769700
+017698                                                                  01769800
+017699     GOBACK.                                                      01769900
+017700                                                                  01770000
+017710     EJECT                                                        01771000
+017720                                                                  01772000
+017730***************************************************************** 01773000
+017740*                1000 BEGIN PROGRAM                             * 01774000
+017750*                                                               * 01775000
+017760*    THIS PARAGRAPH PERFORMS VARIOUS PROGRAM INITIALIZATION     * 01776000
+017770*    ROUTINES.                                                  * 01777000
+017780*                                                               * 01778000
+017790*                                                               * 01779000
+017800*    PARAGRAPHS CALLED:  1100 INITIALIZATION                    * 01780000
+017900*                        1200 CALL Z1000                        * 01790000
+018000*                        1300 CALL C1000                        * 01800000
+018100*                        1400 INIT C4000LK1                     * 01810000
+018200*                                                               * 01820000
+018300***************************************************************** 01830000
+018400 1000-BEGIN-PROGRAM.                                              01840000
+018500                                                                  01850000
+018600     PERFORM 1100-INITIALIZATION    THRU 1100-EXIT.               01860000
+018700                                                                  01870000
+018800     PERFORM 1200-CALL-Z1000        THRU 1200-EXIT.               01880000
+018900                                                                  01890000
+019000     PERFORM 1300-CALL-C1000        THRU 1300-EXIT.               01900000
+019100                                                                  01910000
+019200     PERFORM 1400-INIT-C4000LK1     THRU 1400-EXIT.               01920000
+019201                                                                  01920100
+019210     PERFORM 1500-PROCESS-HDR-REC   THRU 1500-EXIT.               01921000
+019300                                                                  01930000
+019310                                                                  01931000
+019400 1000-EXIT.                                                       01940000
+019500     EXIT.                                                        01950000
+019600     EJECT                                                        01960000
+019700***************************************************************** 01970000
+019800*                1100 INITIALIZATION                            * 01980000
+019900*                                                               * 01990000
+020000*    THIS PARAGRAPH INITIALIZES VARIOUS WORKING STORAGE AREAS.  * 02000000
+020200*                                                               * 02020000
+020300*    PARAGRAPHS CALLED:  P100-PROCESS-REPORT                    * 02030000
+020400*                                                               * 02040000
+020500***************************************************************** 02050000
+020600 1100-INITIALIZATION.                                             02060000
+020700                                                                  02070000
+020800     COPY NDVRAUDT.                                               02080000
+020900                                                                  02090000
+021000     INITIALIZE XIRB5100-SAVE-AREAS                               02100000
+021100                C1000LK1                                          02110000
+021200                C2000LK1                                          02120000
+021300                C4000LK1                                          02130000
+021400                C5000LK1                                          02140000
+021500                V4010LK1                                          02150000
+021600                E1000LK1                                          02160000
+021700                Z9000LK1.                                         02170000
+021800                                                                  02180000
+021900     SET OPEN-FILE                TO TRUE                         02190000
+022000     PERFORM P100-PROCESS-REPORT  THRU P100-EXIT.                 02200000
+022100                                                                  02210000
+022200 1100-EXIT.                                                       02220000
+022300     EXIT.                                                        02230000
+022400     EJECT                                                        02240000
+022500                                                                  02250000
+022600***************************************************************** 02260000
+022700*                1200 CALL Z1000                                * 02270000
+022800*                                                               * 02280000
+022900*    THIS PARAGRAPH CALLS XIRZ1000 TO GET THE SYSTEM TIME AND   * 02290000
+023000*    DATE.                                                      * 02300000
+023100*                                                               * 02310000
+023200*    PARAGRAPHS CALLED:  E100 CALL ERRORS                       * 02320000
+023300*                                                               * 02330000
+023400***************************************************************** 02340000
+023500 1200-CALL-Z1000.                                                 02350000
+023600                                                                  02360000
+023700     INITIALIZE Z1000LK1                                          02370000
+023800                                                                  02380000
+023900     CALL XIRZ1000 USING Z1000LK1.                                02390000
+024000                                                                  02400000
+024100     EVALUATE TRUE                                                02410000
+024200       WHEN RTRN-CD OF Z1000LK1 = ZEROS                           02420000
+024300         MOVE DB2-FMAT-DAT-TMSTMP OF Z1000LK1                     02430000
+024400                                  TO WS-TEMP-TIME-STMP            02440000
+024500       WHEN OTHER                                                 02450000
+024600         MOVE LT-1200 TO PROG-PAR-NO OF Z9000LK1                  02460000
+024700         MOVE RTRN-CD OF Z1000LK1 TO ERRR-CD OF E1000LK1          02470000
+024800         PERFORM E100-CALL-ERRORS                                 02480000
+024900     END-EVALUATE.                                                02490000
+025000                                                                  02500000
+025100     MOVE DB2-FMAT-DAT-TMSTMP OF Z1000LK1 TO WS-TEMP-TIME-STMP.   02510000
+025200                                                                  02520000
+025300 1200-EXIT.                                                       02530000
+025400     EXIT.                                                        02540000
+025500     EJECT                                                        02550000
+025600                                                                  02560000
+025700***************************************************************** 02570000
+025800*                1300 CALL C1000                                * 02580000
+025900*                                                               * 02590000
+026000*                                                               * 02600000
+026100*    THIS PARAGRAPH CONTROLS SUPPLIER LOOP, IT GETS THE SPLR ID * 02610000
+026200*    (XIRC1000), PERFORMS PREREQUISITES (XIRC2000) AND          * 02620000
+026300*    INITIALIZES THE RUN CONTROLS TABLES FOR EACH SUPPLIER      * 02630000
+026400*    RETURNED.                                                  * 02640000
+026500*                                                               * 02650000
+026600*    PARAGRAPHS CALLED:  1310 SELECT SPLR                       * 02660000
+026700*                        1320 C2000 PREREQUISITES               * 02670000
+026800*                                                               * 02680000
+026900***************************************************************** 02690000
+027000 1300-CALL-C1000.                                                 02700000
+027100                                                                  02710000
+027200     PERFORM 1310-SELECT-SPLR                                     02720000
+027300                                                                  02730000
+027400     PERFORM UNTIL RTRN-CD OF C1000LK1 IS NOT = ZEROS             02740000
+027500                                                                  02750000
+027600       PERFORM 1320-C2000-PREREQUISITES                           02760000
+027700                                                                  02770000
+027800       PERFORM 1310-SELECT-SPLR                                   02780000
+027900                                                                  02790000
+028000     END-PERFORM.                                                 02800000
+028100                                                                  02810000
+028200 1300-EXIT.                                                       02820000
+028300     EXIT.                                                        02830000
+028400     EJECT                                                        02840000
+028500***************************************************************** 02850000
+028600*                1310 SELECT SPLR                               * 02860000
+028700*                                                               * 02870000
+028800*                                                               * 02880000
+028900*    THIS PARAGRAPH WILL CALL THE SELECT SUPPLIER MODULE        * 02890000
+029000*    (XIRC1000) TO OBTAIN THE SUPPLIER ID.                      * 02900000
+029100*                                                               * 02910000
+029200*    PARAGRAPHS CALLED: E100 CALL ERRORS                        * 02920000
+029300*                                                               * 02930000
+029400***************************************************************** 02940000
+029500 1310-SELECT-SPLR.                                                02950000
+029600                                                                  02960000
+029700     CALL XIRC1000 USING C1000LK1.                                02970000
+029800                                                                  02980000
+029900     EVALUATE TRUE                                                02990000
+030000       WHEN RTRN-CD OF C1000LK1 = ZEROS                           03000000
+030100                                                                  03010000
+030200         MOVE SPLR-ID OF C1000LK1 TO SPLR-ID   OF C2000LK1        03020000
+030210         MOVE APPLCN-BLG-GR-ID OF C1000LK1                        03021000
+030220           TO APPLCN-BLG-GR-ID OF C2000LK1                        03022000
+030300                                                                  03030000
+030400       WHEN RTRN-CD OF C1000LK1 = SQL-ALL-ROWS-ACCESSED           03040000
+030500         CONTINUE                                                 03050000
+030600                                                                  03060000
+030700       WHEN OTHER                                                 03070000
+030800         MOVE LT-1310                TO PROG-PAR-NO OF Z9000LK1   03080000
+030900         MOVE RTRN-CD OF C1000LK1    TO ERRR-CD OF E1000LK1       03090000
+031000         MOVE CMMN-SQLCA OF C1000LK1 TO CMMN-SQLCA OF Z9000LK1    03100000
+031100         PERFORM E100-CALL-ERRORS                                 03110000
+031200     END-EVALUATE.                                                03120000
+031300                                                                  03130000
+031400***************************************************************** 03140000
+031500*                 1320 C2000 PREREQUISITES                      * 03150000
+031600*                                                               * 03160000
+031700*    THIS PARAGRAPH WILL CALL THE PREREQUISITES CHECK MODULE    * 03170000
+031800*    (XIRC2000) TO ENSURE ALL PREREQUISITES HAVE BEEN MET.      * 03180000
+031900*                                                               * 03190000
+032000*    PARAGRAPHS CALLED: E100 CALL ERRORS                        * 03200000
+032100*                                                               * 03210000
+032200***************************************************************** 03220000
+032300 1320-C2000-PREREQUISITES.                                        03230000
+032400                                                                  03240000
+032500     MOVE SPLR-ID OF C1000LK1  TO SPLR-ID          OF C2000LK1.   03250000
+032600     MOVE LT-FUNC-ID           TO FUNC-ID          OF C2000LK1.   03260000
+032700     MOVE WS-TEMP-TIME-STMP    TO PROG-STRT-TMSTMP OF C2000LK1.   03270000
+032800                                                                  03280000
+032900     CALL XIRC2000 USING C2000LK1.                                03290000
+033000     EVALUATE TRUE                                                03300000
+033100       WHEN RTRN-CD OF C2000LK1 = ZEROS                           03310000
+033200         PERFORM C900-COMMIT                                      03320000
+033300       WHEN OTHER                                                 03330000
+033400         MOVE LT-1320 TO PROG-PAR-NO OF Z9000LK1                  03340000
+033500         MOVE RTRN-CD OF C2000LK1 TO ERRR-CD OF E1000LK1          03350000
+033600         MOVE CMMN-SQLCA OF C2000LK1 TO CMMN-SQLCA OF Z9000LK1    03360000
+033700         PERFORM E100-CALL-ERRORS                                 03370000
+033800     END-EVALUATE.                                                03380000
+033900                                                                  03390000
+034000     EJECT                                                        03400000
+035110***************************************************************** 03511000
+035120*                1400 INIT C4000LK1                             * 03512000
+035130*                                                               * 03513000
+035140*    INITIALIZES THE RUN CONTROLS TABLES FOR EACH SUPPLIER      * 03514000
+035150*    RETURNED.                                                  * 03515000
+035160*                                                               * 03516000
+035170*    PARAGRAPHS CALLED:  NONE                                   * 03517000
+035180*                                                               * 03518000
+035190***************************************************************** 03519000
+035191 1400-INIT-C4000LK1.                                              03519100
+035192                                                                  03519200
+035200     MOVE SPLR-ID OF C2000LK1    TO SPLR-ID            OF C4000LK103520000
+035300     MOVE LT-FUNC-ID             TO FUNC-ID            OF C4000LK103530000
+035400     MOVE WS-PROGRAM-NAME-LIT    TO PROG-ID            OF C4000LK103540000
+035500     MOVE DB2-FMAT-DAT-TMSTMP    TO PROG-STRT-TMSTMP   OF C4000LK103550000
+035600     MOVE APPLCN-RGN-ID  OF C2000LK1 TO APPLCN-RGN-ID  OF C4000LK103560000
+035700     MOVE APPLCN-LOCN-ID OF C2000LK1 TO APPLCN-LOCN-ID OF C4000LK103570000
+035800     MOVE APPLCN-BLG-GR-ID OF C2000LK1 TO                         03580000
+035900                               APPLCN-BLG-GR-ID OF C4000LK1       03590000
+036000     MOVE CURR-PRCSS-CY-NO OF C2000LK1 TO PRCSS-CY-NO  OF C4000LK103600000
+036100                                                                  03610000
+036200     MOVE DB2-FMAT-DAT-TMSTMP OF Z1000LK1 TO WS-TEMP-TIME-STMP    03620000
+036300                                                                  03630000
+036400     MOVE WS-TEMP-TIME-STMP-CC        TO WS-FRMT-C4000-CC         03640000
+036500     MOVE WS-TEMP-TIME-STMP-YR        TO WS-FRMT-C4000-YR         03650000
+036600     MOVE WS-TEMP-TIME-STMP-MO        TO WS-FRMT-C4000-MO         03660000
+036700     MOVE WS-TEMP-TIME-STMP-DY        TO WS-FRMT-C4000-DY         03670000
+036800     MOVE WS-TEMP-TIME-STMP-HR        TO WS-FRMT-C4000-HR         03680000
+036900     MOVE WS-TEMP-TIME-STMP-MN        TO WS-FRMT-C4000-MN         03690000
+037000     MOVE WS-TEMP-TIME-STMP-SC        TO WS-FRMT-C4000-SC.        03700000
+037100                                                                  03710000
+037200 1400-EXIT.                                                       03720000
+037300     EXIT.                                                        03730000
+037400     EJECT                                                        03740000
+037500                                                                  03750000
+037510***************************************************************** 03751000
+037520*                   1500 PROCESS HDR REC                          03752000
+037530*                                                                 03753000
+037540*   THIS PARAGRAPH BUILDS THE HEADER RECORD FOR OUTPUT FILE       03754000
+037550*                                                                 03755000
+037560*   PARAGRAPG CALLED: W100-PERFORM-WRITE-REPORT                   03756000
+037570*                                                                 03757000
+037580***************************************************************** 03758000
+037590                                                                  03759000
+037591 1500-PROCESS-HDR-REC.                                            03759100
+037592                                                                  03759200
+037593     SET WRITE-FILE            TO TRUE.                           03759300
+037594                                                                  03759400
+037595     SET  RCD-ID-TYP           OF BILL-ARGMT-HDR    TO TRUE.      03759500
+037596     MOVE CURR-SYS-DAT         OF C2000LK1                        03759600
+037597       TO CURR-SYS-DAT         OF BILL-ARGMT-HDR.                 03759700
+037598     MOVE CURR-SYS-TM          OF C2000LK1                        03759800
+037599       TO CURR-SYS-TM          OF BILL-ARGMT-HDR.                 03759900
+037600     MOVE ZEROS                TO SEQ-CNTRL-NO  OF BILL-ARGMT-HDR.03760000
+037601     MOVE WS-PROGRAM-NAME-LIT                                     03760100
+037602       TO ORIG-PROG-ID         OF BILL-ARGMT-HDR.                 03760200
+037603     MOVE CURR-PRCSS-CY-NO     OF C2000LK1                        03760300
+037604       TO CURR-PRCSS-CY-NO     OF BILL-ARGMT-HDR.                 03760400
+037605     MOVE CURR-PRCSS-CY-DAT    OF C2000LK1                        03760500
+037606       TO CURR-PRCSS-CY-DAT    OF BILL-ARGMT-HDR.                 03760600
+037607     MOVE APPLCN-LOCN-ID       OF C2000LK1                        03760700
+037608       TO APPLCN-LOCN-ID       OF BILL-ARGMT-HDR.                 03760800
+037609     MOVE SPACES               TO FIL-TYP       OF BILL-ARGMT-HDR.03760900
+037610     MOVE SPACES               TO EFF-DAT       OF BILL-ARGMT-HDR.03761000
+037611     MOVE SPACES               TO CARR-CIC-CODE OF BILL-ARGMT-HDR.03761100
+037615                                                                  03761500
+037616     ADD WS-1                  TO WS-REC-WRITE-CNT.               03761600
+037617                                                                  03761700
+037618     PERFORM W100-PERFORM-WRITE-REPORT   THRU   W100-EXIT.        03761800
+037619                                                                  03761900
+037620 1500-EXIT.                                                       03762000
+037621     EXIT.                                                        03762100
+037622     EJECT                                                        03762200
+037630***************************************************************** 03763000
+037700*                2000 MAIN PROCESS                              * 03770000
+037800*                                                               * 03780000
+037900*    THIS PARAGRAPH CONTROLS THE MAIN PROCESSING OF THE PROGRAM.* 03790000
+038000*    IT CONTROLS THE PROCESSING BY WHICH ALL DATA IS SELECTED   * 03800000
+038100*    FOR THE REPORT.                                            * 03810000
+038200*                                                               * 03820000
+038300*    PARAGRAPHS CALLED:  2010 DECLARE OPEN XIRB096Y             * 03830000
+038400*                        2020 FETCH XIRB096Y                    * 03840000
+038410*                        2030 CLOSE XIRB096Y                    * 03841000
+038500*                                                               * 03850000
+038600***************************************************************** 03860000
+038700 2000-MAIN-PROCESS.                                               03870000
+038800                                                                  03880000
+038830     PERFORM 2010-DECLARE-OPEN-XIRB096Y     THRU 2010-EXIT.       03883000
+038840                                                                  03884000
+038850     SET     MORE-XIRB096Y-ROWS             TO TRUE.              03885000
+038851     PERFORM 2020-FETCH-XIRB096Y            THRU 2020-EXIT.       03885100
+038852                                                                  03885200
+038860     PERFORM UNTIL NO-MORE-XIRB096Y-ROWS                          03886000
+038861         PERFORM 2040-PROCESS-DET-REC       THRU 2040-EXIT        03886100
+038870         PERFORM 2020-FETCH-XIRB096Y        THRU 2020-EXIT        03887000
+038882     END-PERFORM.                                                 03888200
+038883                                                                  03888300
+038890     PERFORM 2030-CLOSE-XIRB096Y            THRU 2030-EXIT.       03889000
+039000                                                                  03900000
+039010     PERFORM 2050-PROCESS-TRL-REC           THRU 2050-EXIT.       03901000
+039020                                                                  03902000
+039100 2000-EXIT.                                                       03910000
+039200     EXIT.                                                        03920000
+039300     EJECT                                                        03930000
+039363***************************************************************** 03936300
+039364*                2010 DECLARE OPEN XIRB096Y                     * 03936400
+039365*                                                               * 03936500
+039366*   THIS PARAGRAPH DECLARES CURSOR XIRB096Y THROUGH WHICH       * 03936600
+039367*   BILL PERIOD CODE WOULD BE IDENTIFIED.                       * 03936700
+039369*                                                               * 03936900
+039370*    PARAGRAPHS CALLED:  C100 PARA2110 SQL                      * 03937000
+039372*                        E100 CALL ERRORS                       * 03937200
+039374***************************************************************** 03937400
+039375 2010-DECLARE-OPEN-XIRB096Y.                                      03937500
+039376                                                                  03937600
+039382     MOVE APPLCN-LOCN-ID          OF C2000LK1                     03938200
+039383       TO APPLCN-LOCN-ID          OF XIRB096Y                     03938300
+039384                                                                  03938400
+039385     MOVE APPLCN-BLG-GR-ID        OF C2000LK1                     03938500
+039386       TO APPLCN-BLG-GR-ID        OF XIRB096Y                     03938600
+039387                                                                  03938700
+039392     MOVE BILL-PER-CD1            OF C2000LK1  TO WS-BILL-PER-CD1 03939200
+039393     MOVE BILL-PER-CD2            OF C2000LK1  TO WS-BILL-PER-CD2 03939300
+039394                                                                  03939400
+039395     EXEC SQL                                                     03939500
+039396        INCLUDE XIRB96C0                                          03939600
+039397     END-EXEC                                                     03939700
+039398                                                                  03939800
+039399     SET RESOURCE-NOT-AVAILABLE   TO TRUE                         03939900
+039400     MOVE ZERO                    TO WS-RETRY-CT.                 03940000
+039401                                                                  03940100
+039402     PERFORM C100-PARA2010-SQL    THRU C100-EXIT                  03940200
+039403       UNTIL RESOURCE-AVAILABLE                                   03940300
+039404          OR WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1.             03940400
+039405                                                                  03940500
+039406     IF WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1                   03940600
+039407          MOVE LT-2010          TO PROG-PAR-NO OF Z9000LK1        03940700
+039408          MOVE ABND-3999        TO ERRR-CD     OF E1000LK1        03940800
+039409          SET ERRR-IDX          TO 1                              03940900
+039410          MOVE WS-RESOURCE-MSG  TO ERRR-DISPL-FLDS(ERRR-IDX)      03941000
+039411          MOVE SQLCA            TO SQLCA-AR    OF Z9000LK1        03941100
+039412          MOVE WS-XIRB096Y-VIEW TO VW-NM       OF Z9000LK1        03941200
+039413          PERFORM E100-CALL-ERRORS                                03941300
+039414     END-IF.                                                      03941400
+039415                                                                  03941500
+039416 2010-EXIT.                                                       03941600
+039417     EXIT.                                                        03941700
+039418     EJECT                                                        03941800
+039419                                                                  03941900
+039479***************************************************************** 03947900
+039480*                2020 FETCH XIRB096Y                            * 03948000
+039481*                                                               * 03948100
+039482*    THIS PARAGRAPH FETCHES THE ROWS THRU CURSOR DEFINED TO     * 03948200
+039483*    FETCH THE BILL PERIOD CODE.                                * 03948300
+039484*                                                               * 03948400
+039485*    PARAGRAPHS CALLED:  F100 PARA2120 FETCH                    * 03948500
+039486*                        E100 CALL ERRORS                       * 03948600
+039487*                                                               * 03948700
+039488***************************************************************** 03948800
+039489 2020-FETCH-XIRB096Y.                                             03948900
+039490                                                                  03949000
+039491     SET RESOURCE-NOT-AVAILABLE TO TRUE                           03949100
+039492     MOVE ZERO                    TO WS-RETRY-CT.                 03949200
+039493                                                                  03949300
+039494     PERFORM F100-PARA2020-SQL  THRU F100-EXIT                    03949400
+039495       UNTIL RESOURCE-AVAILABLE                                   03949500
+039496          OR WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1              03949600
+039497                                                                  03949700
+039498     IF WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1                   03949800
+039499          MOVE ABND-3999        TO ERRR-CD     OF E1000LK1        03949900
+039500          SET ERRR-IDX          TO 1                              03950000
+039501          MOVE WS-RESOURCE-MSG  TO ERRR-DISPL-FLDS(ERRR-IDX)      03950100
+039502          MOVE SQLCA            TO SQLCA-AR    OF Z9000LK1        03950200
+039503          MOVE WS-XIRB096Y-VIEW TO VW-NM       OF Z9000LK1        03950300
+039504          MOVE LT-2020          TO PROG-PAR-NO OF Z9000LK1        03950400
+039505          PERFORM E100-CALL-ERRORS                                03950500
+039506     END-IF.                                                      03950600
+039507                                                                  03950700
+039508 2020-EXIT.                                                       03950800
+039509     EXIT.                                                        03950900
+039510     EJECT                                                        03951000
+039511                                                                  03951100
+039512***************************************************************** 03951200
+039513*                2030 CLOSE XIRB096Y                            * 03951300
+039514*                                                               * 03951400
+039515*   THIS PARAGRAPH CLOSES THE CURSOR DEFINED TO FETCH THE       * 03951500
+039516*   BILL PERIOD CODE.                                           * 03951600
+039517*                                                               * 03951700
+039518*   PARAGRAPHS CALLED:  K100 PARA2030 SQL                       * 03951800
+039519*                       E100 CALL ERRORS                        * 03951900
+039520*                                                               * 03952000
+039521***************************************************************** 03952100
+039522 2030-CLOSE-XIRB096Y.                                             03952200
+039523                                                                  03952300
+039524     MOVE +1 TO WS-RETRY-CT                                       03952400
+039525                                                                  03952500
+039526     SET RESOURCE-NOT-AVAILABLE TO TRUE                           03952600
+039527                                                                  03952700
+039528     PERFORM K100-PARA2030-SQL THRU K100-EXIT                     03952800
+039529       UNTIL RESOURCE-AVAILABLE                                   03952900
+039530          OR WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1              03953000
+039531                                                                  03953100
+039532     IF WS-RETRY-CT > PROG-RETRY-NO OF C2000LK1                   03953200
+039533          MOVE ABND-3999        TO ERRR-CD     OF E1000LK1        03953300
+039534          SET ERRR-IDX          TO 1                              03953400
+039535          MOVE WS-RESOURCE-MSG  TO ERRR-DISPL-FLDS(ERRR-IDX)      03953500
+039536          MOVE SQLCA            TO SQLCA-AR    OF Z9000LK1        03953600
+039537          MOVE WS-XIRB096Y-VIEW TO VW-NM       OF Z9000LK1        03953700
+039538          MOVE LT-2030          TO PROG-PAR-NO OF Z9000LK1        03953800
+039539          PERFORM E100-CALL-ERRORS                                03953900
+039540     END-IF.                                                      03954000
+039541                                                                  03954100
+039542 2030-EXIT.                                                       03954200
+039543     EXIT.                                                        03954300
+039544     EJECT                                                        03954400
+039545                                                                  03954500
+039546******************************************************************03954600
+039547*                   2040 PROCESS DET REC                         *03954700
+039548*                                                                *03954800
+039549*   THIS PARAGRAPH PROCESS THE DETAIL INFORMATION WITH SELECTED  *03954900
+039550*   BILL PERIOD CODES AND WRITES THEM TO OUTPUT FILE.            *03955000
+039551*                                                                *03955100
+039552*   PARAGRAPG CALLED: W100 PERFORM WRITE REPORT                  *03955200
+039553*                                                                *03955300
+039554******************************************************************03955400
+039555                                                                  03955500
+039556 2040-PROCESS-DET-REC.                                            03955600
+039557                                                                  03955700
+039559                                                                  03955900
+039560        SET  RCD-ID-TYP         OF BILL-ARGMT-DET  TO TRUE.       03956000
+039561                                                                  03956100
+039562        MOVE CUST-BLG-ACCT-ID   OF XIRB096Y TO CUST-BLG-ACCT-ID   03956200
+039563                                            OF BILL-ARGMT-DET.    03956300
+039564        MOVE BILL-PER-CD        OF XIRB096Y TO BILL-PER-CD        03956400
+039565                                            OF BILL-ARGMT-DET.    03956500
+039566                                                                  03956600
+039569        PERFORM W100-PERFORM-WRITE-REPORT   THRU W100-EXIT.       03956900
+039570                                                                  03957000
+039571        ADD WS-1                TO WS-REC-WRITE-CNT.              03957100
+039572                                                                  03957200
+039573 2040-EXIT.                                                       03957300
+039574     EXIT.                                                        03957400
+039575     EJECT                                                        03957500
+039576                                                                  03957600
+039577******************************************************************03957700
+039578*                   2050 PROCESS TRL REC                         *03957800
+039579*                                                                *03957900
+039580*   THIS PARAGRAPH WRITES THE TRAILER RECORD TO OUTPUT FILE.     *03958000
+039581*                                                                *03958100
+039582*   PARAGRAPG CALLED: W100 PERFORM WRITE REPORT                  *03958200
+039583*                                                                *03958300
+039584******************************************************************03958400
+039585                                                                  03958500
+039586 2050-PROCESS-TRL-REC.                                            03958600
+039587                                                                  03958700
+039588     SET  RCD-ID-TYP           OF BILL-ARGMT-TRL    TO TRUE.      03958800
+039589     MOVE CURR-SYS-DAT         OF C2000LK1                        03958900
+039590       TO CURR-SYS-DAT         OF BILL-ARGMT-TRL.                 03959000
+039591     MOVE CURR-SYS-TM          OF C2000LK1                        03959100
+039592       TO CURR-SYS-TM          OF BILL-ARGMT-TRL.                 03959200
+039593     MOVE ZEROS                TO SEQ-CNTRL-NO                    03959300
+039594                               OF BILL-ARGMT-TRL.                 03959400
+039595     MOVE WS-PROGRAM-NAME-LIT  TO ORIG-PROG-ID                    03959500
+039596                               OF BILL-ARGMT-TRL.                 03959600
+039597     MOVE CURR-PRCSS-CY-NO     OF C2000LK1                        03959700
+039598       TO CURR-PRCSS-CY-NO     OF BILL-ARGMT-TRL.                 03959800
+039599     MOVE CURR-PRCSS-CY-DAT    OF C2000LK1                        03959900
+039600       TO CURR-PRCSS-CY-DAT    OF BILL-ARGMT-TRL.                 03960000
+039601     MOVE APPLCN-LOCN-ID       OF C2000LK1                        03960100
+039602       TO APPLCN-LOCN-ID       OF BILL-ARGMT-TRL.                 03960200
+039603     MOVE SPACES               TO FIL-TYP       OF BILL-ARGMT-TRL.03960300
+039604     MOVE SPACES               TO EFF-DAT       OF BILL-ARGMT-TRL.03960400
+039605     MOVE SPACES               TO CARR-CIC-CODE OF BILL-ARGMT-TRL.03960500
+039606                                                                  03960600
+039607     ADD WS-1                  TO WS-REC-WRITE-CNT.               03960700
+039608     MOVE WS-REC-WRITE-CNT     TO TRMTD-NO      OF BILL-ARGMT-TRL.03960800
+039609                                                                  03960900
+039610     PERFORM W100-PERFORM-WRITE-REPORT   THRU   W100-EXIT.        03961000
+039611                                                                  03961100
+039612 2050-EXIT.                                                       03961200
+039613     EXIT.                                                        03961300
+039614     EJECT                                                        03961400
+039615******************************************************************03961500
+039616*                 C100 PARA2010 SQL                              *03961600
+039617*                                                                *03961700
+039618*   THIS PARAGRAPH WILL OPEN THE CURSOR DEFINED TO FETCH THE     *03961800
+039619*   BILL PERIOD CODES.                                           *03961900
+039620*                                                                *03962000
+039621*   PARAGRAPHS CALLED: E100 CALL ERRORS                          *03962100
+039622*                                                                *03962200
+039623******************************************************************03962300
+039624 C100-PARA2010-SQL.                                               03962400
+039625                                                                  03962500
+039626     EXEC SQL                                                     03962600
+039627        INCLUDE XIRB96O0                                          03962700
+039628     END-EXEC                                                     03962800
+039629                                                                  03962900
+039630     EVALUATE SQLCODE OF SQLCA                                    03963000
+039631         WHEN SQL-CALL-SUCCESSFUL                                 03963100
+039632              SET RESOURCE-AVAILABLE TO TRUE                      03963200
+039633         WHEN SQL-SYSTEM-ERROR                                    03963300
+039634         WHEN SQL-DEADLOCK                                        03963400
+039635             ADD 1 TO WS-RETRY-CT                                 03963500
+039636         WHEN OTHER                                               03963600
+039637             MOVE ABND-3999 TO ERRR-CD OF E1000LK1                03963700
+039638             MOVE SQLCA     TO SQLCA-AR OF Z9000LK1               03963800
+039639             MOVE LT-C100   TO PROG-PAR-NO OF Z9000LK1            03963900
+039640             MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1           03964000
+039641             PERFORM E100-CALL-ERRORS                             03964100
+039642     END-EVALUATE.                                                03964200
+039643                                                                  03964300
+039644 C100-EXIT.                                                       03964400
+039645     EXIT.                                                        03964500
+039646     EJECT                                                        03964600
+039647                                                                  03964700
+039648***************************************************************** 03964800
+039649*                    F100 PARA2020 SQL                           *03964900
+039650*                                                                *03965000
+039651*  THIS PARAGRAPH WILL FETCH THE CURSOR DEFINED TO FETCH THE     *03965100
+039652*  BILL PERIOD CODES.                                            *03965200
+039653*                                                                *03965300
+039654*  PARAGRAPHS CALLED: E100 CALL ERRORS                           *03965400
+039655*                                                                 03965500
+039656***************************************************************** 03965600
+039657 F100-PARA2020-SQL.                                               03965700
+039658                                                                  03965800
+039665     EXEC SQL                                                     03966500
+039666        INCLUDE XIRB96F0                                          03966600
+039667     END-EXEC                                                     03966700
+039668                                                                  03966800
+039671                                                                  03967100
+039672       EVALUATE SQLCODE OF SQLCA                                  03967200
+039673         WHEN SQL-CALL-SUCCESSFUL                                 03967300
+039674         ADD WS-1              TO WS-XIRB096Y-CNTR                03967400
+039675         SET MORE-XIRB096Y-ROWS TO TRUE                           03967500
+039676         SET RESOURCE-AVAILABLE TO TRUE                           03967600
+039677                                                                  03967700
+039678*         PERFORM 2040-PROCESS-DET-REC        THRU 2040-EXIT      03967800
+039679                                                                  03967900
+039680           WHEN SQL-ROW-NOT-FOUND                                 03968000
+039681                SET RESOURCE-AVAILABLE TO TRUE                    03968100
+039682                SET NO-MORE-XIRB096Y-ROWS TO TRUE                 03968200
+039683           WHEN SQL-SYSTEM-ERROR                                  03968300
+039684           WHEN SQL-DEADLOCK                                      03968400
+039685                ADD WS-1 TO WS-RETRY-CT                           03968500
+039686           WHEN OTHER                                             03968600
+039687                MOVE ABND-3954 TO ERRR-CD OF E1000LK1             03968700
+039688                MOVE SQLCA     TO SQLCA-AR OF Z9000LK1            03968800
+039689                MOVE LT-F100   TO PROG-PAR-NO OF Z9000LK1         03968900
+039690                MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1        03969000
+039691              PERFORM E100-CALL-ERRORS                            03969100
+039692       END-EVALUATE.                                              03969200
+039693 F100-EXIT.                                                       03969300
+039694     EXIT.                                                        03969400
+039695     EJECT                                                        03969500
+039696******************************************************************03969600
+039697*                    K100 PARA2030 SQL                           *03969700
+039698*                                                                *03969800
+039699*  THIS PARAGRAPH WILL CLOSE THE CURSOR DEFINED TO FETCH THE     *03969900
+039700*  BILL PERIOD CODES.                                            *03970000
+039701*                                                                *03970100
+039702*  PARAGRAPHS CALLED: E100 CALL ERRORS                           *03970200
+039703*                                                                *03970300
+039704******************************************************************03970400
+039705 K100-PARA2030-SQL.                                               03970500
+039706                                                                  03970600
+039707     EXEC SQL                                                     03970700
+039708        INCLUDE XIRB96K0                                          03970800
+039709     END-EXEC                                                     03970900
+039710                                                                  03971000
+039711     EVALUATE SQLCODE OF SQLCA                                    03971100
+039712       WHEN SQL-CALL-SUCCESSFUL                                   03971200
+039713          SET RESOURCE-AVAILABLE TO TRUE                          03971300
+039714       WHEN SQL-SYSTEM-ERROR                                      03971400
+039715       WHEN SQL-DEADLOCK                                          03971500
+039716          ADD 1 TO WS-RETRY-CT                                    03971600
+039717       WHEN OTHER                                                 03971700
+039718          MOVE ABND-3999 TO ERRR-CD OF E1000LK1                   03971800
+039719          MOVE SQLCA     TO SQLCA-AR OF Z9000LK1                  03971900
+039720          MOVE LT-K100   TO PROG-PAR-NO OF Z9000LK1               03972000
+039721          MOVE WS-XIRB096Y-VIEW TO VW-NM OF Z9000LK1              03972100
+039722          PERFORM E100-CALL-ERRORS                                03972200
+039723     END-EVALUATE.                                                03972300
+039724                                                                  03972400
+039725 K100-EXIT.                                                       03972500
+039726     EXIT.                                                        03972600
+039727     EJECT                                                        03972700
+039728                                                                  03972800
+039729***************************************************************** 03972900
+039730*                P100 PROCESS REPORT                            * 03973000
+039731*                                                               * 03973100
+039732*    THIS PARAGRAPH PERFORMS THE I/O FOR THE REPORT FILE.       * 03973200
+039733*                                                               * 03973300
+039734*    PARAGRAPHS CALLED:  E100 CALL ERRORS                       * 03973400
+039735*                                                               * 03973500
+039736***************************************************************** 03973600
+039737 P100-PROCESS-REPORT.                                             03973700
+039738                                                                  03973800
+039739     EVALUATE TRUE                                                03973900
+039740       WHEN OPEN-FILE                                             03974000
+039741           OPEN OUTPUT FD-B510001O                                03974100
+039742       WHEN WRITE-FILE                                            03974200
+039743           WRITE I-O-RECORD                                       03974300
+039744       WHEN CLOSE-FILE                                            03974400
+039745           CLOSE  FD-B510001O                                     03974500
+039746       WHEN OTHER                                                 03974600
+039747           MOVE LT-W100        TO PROG-PAR-NO OF Z9000LK1         03974700
+039748           MOVE ABND-3908      TO ERRR-CD OF E1000LK1             03974800
+039749           MOVE SPLR-ID OF  C2000LK1 TO SPLR-ID OF E1000LK1       03974900
+039750           SET ERRR-IDX TO 1                                      03975000
+039751           MOVE WS-RESOURCE-MSG      TO ERRR-DISPL-FLDS(ERRR-IDX) 03975100
+039752           SET ERRR-IDX UP BY 1                                   03975200
+039753           PERFORM E100-CALL-ERRORS                               03975300
+039754     END-EVALUATE.                                                03975400
+039755                                                                  03975500
+039756 P100-EXIT.                                                       03975600
+039757     EXIT.                                                        03975700
+039758     EJECT                                                        03975800
+039759***************************************************************** 03975900
+039760*                W100 PERFORM WRITE REPORT                      * 03976000
+039761*                                                               * 03976100
+039762*    THIS PARAGRAPH WILL WRITE THE OUTPUT RECORD                * 03976200
+039763*                                                               * 03976300
+039764*    PARAGRAPHS CALLED:  P100 PROCESS REPORT                    * 03976400
+039765*                                                               * 03976500
+039767***************************************************************** 03976700
+039768 W100-PERFORM-WRITE-REPORT.                                       03976800
+039769                                                                  03976900
+039770     SET WRITE-FILE              TO TRUE.                         03977000
+039771     PERFORM P100-PROCESS-REPORT THRU P100-EXIT.                  03977100
+039772                                                                  03977200
+039773     MOVE SPACES TO I-O-RECORD.                                   03977300
+039774                                                                  03977400
+039775 W100-EXIT.                                                       03977500
+039776     EXIT.                                                        03977600
+039780     EJECT                                                        03978000
+039801***************************************************************** 03980100
+039802*                    9000 END PROGRAM                           * 03980200
+039803*                                                               * 03980300
+039810*    THIS PARAGRAPH WILL PERFORM THE FINAL PROCESSING.          * 03981000
+039900*                                                               * 03990000
+040000*    PARAGRAPHS CALLED: 9100-CLOSE-FILES                        * 04000000
+040100*                       9200-UPD-RUN-CNTL-C4000                 * 04010000
+040110*                       9300-UPD-RUN-STAT-C5000                 * 04011000
+040200*                                                               * 04020000
+040400***************************************************************** 04040000
+040500 9000-END-PROGRAM.                                                04050000
+040600                                                                  04060000
+040700     PERFORM 9100-CLOSE-FILES         THRU 9100-EXIT.             04070000
+040800     PERFORM 9200-UPD-RUN-CNTL-C4000  THRU 9200-EXIT.             04080000
+040900     PERFORM 9300-UPD-RUN-STAT-C5000  THRU 9300-EXIT.             04090000
+041000                                                                  04100000
+041100     EJECT                                                        04110000
+041200***************************************************************** 04120000
+041300*                    9100 CLOSE OPEN FILES                      * 04130000
+041400*                                                               * 04140000
+041500*  THIS PARAGRAPH WILL CLOSE THE REPORT FILE.                   * 04150000
+041600*                                                               * 04160000
+041700*    PARAGRAPHS CALLED: P100-PROCESS-REPORT                     * 04170000
+041800*                                                               * 04180000
+041900***************************************************************** 04190000
+042000 9100-CLOSE-FILES.                                                04200000
+042100                                                                  04210000
+042200     SET CLOSE-FILE                TO TRUE                        04220000
+042300     PERFORM P100-PROCESS-REPORT   THRU P100-EXIT.                04230000
+042400                                                                  04240000
+042500 9100-EXIT.                                                       04250000
+042600     EXIT.                                                        04260000
+042700     EJECT                                                        04270000
+042710******************************************************************04271000
+042720*                                                                *04272000
+042730*                9200 UPD RUN CNTL C4000                         *04273000
+042740*                                                                *04274000
+042750*    SENDS THE TOTALS OF THE I/O OPERATIONS TO THE C4000LK1      *04275000
+042760*    FOR THE SUPPLIER JUST PROCESSED.                            *04276000
+042770*    ALL THE VIEW NAMES AND THE ASSOCIATED RECORD COUNTS ARE     *04277000
+042780*    MOVED TO THE C4000LK1 LINKAGE KEY.                          *04278000
+042790*                                                                *04279000
+042791*    PARAGRAPHS CALLED: E100-CALL-ERRORS                         *04279100
+042792*                                                                *04279200
+042793******************************************************************04279300
+042794 9200-UPD-RUN-CNTL-C4000.                                         04279400
+042795                                                                  04279500
+042796      SET RUN-IDX TO +1                                           04279600
+042797                                                                  04279700
+042798      MOVE WS-FRMT-C4000-DAT                                      04279800
+042799        TO FIL-HDR-DAT    OF C4000LK1(RUN-IDX)                    04279900
+042800       MOVE WS-FRMT-C4000-TIM                                     04280000
+042801         TO FIL-HDR-TM     OF C4000LK1(RUN-IDX)                   04280100
+042802       MOVE WS-0                                                  04280200
+042803         TO FIL-HDR-SEQ-NO OF C4000LK1(RUN-IDX)                   04280300
+042804       MOVE WS-B510001O                                           04280400
+042805         TO INPT-OP-DA-NM  OF C4000LK1(RUN-IDX)                   04280500
+042806       MOVE WS-REC-WRITE-CNT                                      04280600
+042807         TO RCDS-WRTTN-NO  OF C4000LK1 (RUN-IDX)                  04280700
+042808       SET RUN-IDX UP BY +1                                       04280800
+042809                                                                  04280900
+042810       MOVE WS-FRMT-C4000-DAT                                     04281000
+042811         TO FIL-HDR-DAT    OF C4000LK1(RUN-IDX)                   04281100
+042812       MOVE WS-FRMT-C4000-TIM                                     04281200
+042813         TO FIL-HDR-TM     OF C4000LK1(RUN-IDX)                   04281300
+042814       MOVE WS-0                                                  04281400
+042815         TO FIL-HDR-SEQ-NO OF C4000LK1(RUN-IDX)                   04281500
+042816       MOVE WS-XIRB096Y-VIEW                                      04281600
+042817         TO INPT-OP-DA-NM  OF C4000LK1(RUN-IDX)                   04281700
+042818       MOVE WS-XIRB096Y-CNTR                                      04281800
+042819         TO RCDS-SELD-NO   OF C4000LK1 (RUN-IDX)                  04281900
+042820       SET RUN-IDX UP BY +1                                       04282000
+042821                                                                  04282100
+042822     CALL XIRC4000 USING C4000LK1                                 04282200
+042823                                                                  04282300
+042824     EVALUATE TRUE                                                04282400
+042825       WHEN RTRN-CD OF C4000LK1 = ZEROS                           04282500
+042826         CONTINUE                                                 04282600
+042827       WHEN OTHER                                                 04282700
+042828         MOVE LT-9200   TO PROG-PAR-NO OF Z9000LK1                04282800
+042829         MOVE SPLR-ID OF C4000LK1 TO SPLR-ID OF E1000LK1          04282900
+042830         MOVE RTRN-CD OF C4000LK1 TO ERRR-CD OF E1000LK1          04283000
+042831         MOVE CMMN-SQLCA OF C4000LK1 TO CMMN-SQLCA OF Z9000LK1    04283100
+042832         PERFORM E100-CALL-ERRORS                                 04283200
+042833     END-EVALUATE.                                                04283300
+042834                                                                  04283400
+042835 9200-EXIT.                                                       04283500
+042836      EXIT.                                                       04283600
+042837      EJECT                                                       04283700
+042840***************************************************************** 04284000
+042900*                    9300 UPD RUN STAT C5000.                   * 04290000
+043000*                                                               * 04300000
+043100*  THIS PARAGRAPH WILL UPDATE THE ROW ON RUN STATUS TO INDICATE * 04310000
+043200*  SUCCESSFUL COMPLETION OF THE JOB.                            * 04320000
+043300*                                                               * 04330000
+043400*    PARAGRAPHS CALLED: E100 CALL ERRORS                        * 04340000
+043500*                                                               * 04350000
+043600***************************************************************** 04360000
+043700 9300-UPD-RUN-STAT-C5000.                                         04370000
+043800                                                                  04380000
+043900     MOVE LT-FUNC-ID          TO FUNC-ID OF C5000LK1              04390000
+044000     MOVE WS-PROGRAM-NAME-LIT TO PROG-ID OF C5000LK1              04400000
+044100     MOVE DB2-FMAT-DAT-TMSTMP TO PROG-STRT-TMSTMP OF C5000LK1     04410000
+044200     MOVE APPLCN-RGN-ID OF C2000LK1    TO                         04420000
+044300          APPLCN-RGN-ID OF C5000LK1                               04430000
+044400     MOVE APPLCN-LOCN-ID OF C2000LK1   TO                         04440000
+044500          APPLCN-LOCN-ID OF C5000LK1                              04450000
+044600     MOVE APPLCN-BLG-GR-ID OF C2000LK1 TO                         04460000
+044700          APPLCN-BLG-GR-ID OF C5000LK1                            04470000
+044800     MOVE CURR-PRCSS-CY-NO OF C2000LK1 TO                         04480000
+044900          PRCSS-CY-NO OF C5000LK1                                 04490000
+045000                                                                  04500000
+045100     CALL XIRC5000 USING C5000LK1                                 04510000
+045200                                                                  04520000
+045300     IF RTRN-CD OF C5000LK1 > ZERO                                04530000
+045400        MOVE LT-9300 TO PROG-PAR-NO OF Z9000LK1                   04540000
+045500        MOVE RTRN-CD OF C5000LK1    TO ERRR-CD OF E1000LK1        04550000
+045600        MOVE SPACES                 TO ERRR-DA OF E1000LK1        04560000
+045700        MOVE CMMN-SQLCA OF C5000LK1 TO CMMN-SQLCA OF Z9000LK1     04570000
+045800        PERFORM E100-CALL-ERRORS                                  04580000
+045900     END-IF.                                                      04590000
+046000                                                                  04600000
+046100 9300-EXIT.                                                       04610000
+046200     EXIT.                                                        04620000
+046300     EJECT                                                        04630000
+046400***************************************************************** 04640000
+046500*                         C900 COMMIT                           * 04650000
+046600*                                                               * 04660000
+046700*    THIS PARAGRAPH PERFORMS THE FOLLOWING FUNCTIONS:           * 04670000
+046800*       1. EXECUTE A COMMIT TO FREE THE ERROR REPOSITORY        * 04680000
+046900*                                                               * 04690000
+047000*    PARAGRAPHS CALLED:       NONE.                             * 04700000
+047100*                                                               * 04710000
+047200***************************************************************** 04720000
+047300 C900-COMMIT.                                                     04730000
+047400                                                                  04740000
+047500     EXEC SQL                                                     04750000
+047600        COMMIT                                                    04760000
+047700     END-EXEC.                                                    04770000
+047800                                                                  04780000
+047900     EJECT                                                        04790000
+048000***************************************************************** 04800000
+048100*                E100 CALL ERRORS                               * 04810000
+048200*                                                               * 04820000
+048300*    THIS PARAGRAPH WILL CALL THE ERRORS PROCESS.               * 04830000
+048400*                                                               * 04840000
+048500*    PARAGRAPHS CALLED: C900-COMMIT                             * 04850000
+048600*                       Z900-CALL-ABEND                         * 04860000
+048700*                                                               * 04870000
+048800***************************************************************** 04880000
+048900 E100-CALL-ERRORS.                                                04890000
+049000                                                                  04900000
+049100     MOVE SPLR-ID OF C2000LK1  TO SPLR-ID OF E1000LK1             04910000
+049200     MOVE WS-PROGRAM-NAME-LIT  TO PROG-ID OF E1000LK1             04920000
+049300     MOVE LT-FUNC-ID           TO FUNC-ID OF E1000LK1             04930000
+049400*    MOVE SPACES               TO TRNSCTN-ID OF E1000LK1          04940000
+049500*    MOVE ZEROS                TO TRNSCTN-SEQ-NO OF E1000LK1      04950000
+049600     MOVE CURR-PRCSS-CY-DAT    OF C2000LK1 TO                     04960000
+049700          CURR-PRCSS-CY-DAT OF E1000LK1                           04970000
+049800                                                                  04980000
+049810     DISPLAY 'E1000LK1  ' E1000LK1                                04981001
+049900     CALL XIRE1000 USING E1000LK1                                 04990000
+050000     EVALUATE TRUE                                                05000000
+050100                                                                  05010000
+050200       WHEN RTRN-CD OF E1000LK1 = ZEROS                           05020000
+050300                                                                  05030000
+050400         IF FATAL OF E1000LK1                                     05040000
+050500             PERFORM Z900-CALL-ABEND                              05050000
+050600         END-IF                                                   05060000
+050700                                                                  05070000
+050800       WHEN OTHER                                                 05080000
+050900         MOVE ERRR-CD OF E1000LK1                                 05090000
+051000           TO ERRR-CD OF WS-ERRR-CD                               05100000
+051100         MOVE WS-ERRR-CD                                          05110000
+051200           TO ERRR-DISPL-FLDS OF ERRR-DISPL(1)                    05120000
+051300         MOVE RTRN-CD OF E1000LK1                                 05130000
+051400           TO ERRR-CD OF E1000LK1                                 05140000
+051500         MOVE ERRR-SQLCA OF E1000LK1                              05150000
+051600           TO ERRR-SQLCA OF Z9000LK1                              05160000
+051700                                                                  05170000
+051800         PERFORM Z900-CALL-ABEND                                  05180000
+051900                                                                  05190000
+052000     END-EVALUATE.                                                05200000
+052100                                                                  05210000
+052200     PERFORM C900-COMMIT.                                         05220000
+052300                                                                  05230000
+052400     EJECT                                                        05240000
+052500***************************************************************** 05250000
+052600*                      Z900 CALL ABEND                          * 05260000
+052700*                                                               * 05270000
+052800*    THIS PARAGRAPH WILL CALL THE ABEND PROCESS.                * 05280000
+052900*                                                               * 05290000
+053000*    PARAGRAPHS CALLED: NONE.                                   * 05300000
+053100*                                                               * 05310000
+053200***************************************************************** 05320000
+053300 Z900-CALL-ABEND.                                                 05330000
+053400                                                                  05340000
+053500     SET  ABND-LITL-CD   OF Z9000LK1 TO TRUE                      05350000
+053600     SET  DUMP-ACTN-CD   OF Z9000LK1 TO TRUE                      05360000
+053700     MOVE PROG-ID        OF E1000LK1 TO MDLE-ID OF Z9000LK1       05370000
+053800                                        PROG-ID OF Z9000LK1       05380000
+053900     MOVE SPLR-ID        OF E1000LK1 TO SPLR-ID OF Z9000LK1       05390000
+054000     MOVE FUNC-ID        OF E1000LK1 TO FUNC-ID OF Z9000LK1       05400000
+054100     MOVE DB2-FMAT-DAT-TMSTMP        TO                           05410000
+054200          PROG-STRT-TMSTMP OF Z9000LK1                            05420000
+054300     MOVE ERRR-MSG-TEXT  OF E1000LK1 TO                           05430000
+054400          ERRR-MSG-TEXT  OF Z9000LK1                              05440000
+054500     MOVE TRNSCTN-ID     OF E1000LK1 TO TRNSCTN-ID OF Z9000LK1    05450000
+054600     MOVE TRNSCTN-SEQ-NO OF E1000LK1 TO                           05460000
+054700          TRNSCTN-SEQ-NO OF Z9000LK1                              05470000
+054800     MOVE ERRR-CD        OF E1000LK1 TO ERRR-CD OF Z9000LK1       05480000
+054900     MOVE ERRR-DA        OF E1000LK1 TO ERRR-DA OF Z9000LK1       05490000
+055000                                                                  05500000
+055100     CALL XIRZ9000 USING Z9000LK1.                                05510000
+055200***************************************************************** 05520000
+055300*            E N D  O F  X I R B 5 1 0 0  M O D U L E           * 05530000
+055400***************************************************************** 05540000
+
