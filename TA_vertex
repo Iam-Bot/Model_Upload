@@ -3574,3 +3574,677 @@ Response:
     "total_token_count": 7101
   }
 }
+
+
+
+
+
+```java
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+public class XIRB5100 {
+
+    private static final String INPUT_FILE_NAME = "XIRB5100.in";
+    private static final String OUTPUT_FILE_NAME = "XIRB5100.out";
+
+    public static void main(String[] args) throws IOException {
+        // Read input file
+        List<String> inputLines = Files.readAllLines(Paths.get(INPUT_FILE_NAME));
+
+        // Convert input lines to COBOL data structures
+        XIRB5100WorkingStorage workingStorage = new XIRB5100WorkingStorage(inputLines);
+
+        // Process data
+        XIRB5100Processor processor = new XIRB5100Processor(workingStorage);
+        processor.process();
+
+        // Write output file
+        List<String> outputLines = processor.getOutputLines();
+        Files.write(Paths.get(OUTPUT_FILE_NAME), outputLines);
+    }
+}
+
+class XIRB5100WorkingStorage {
+
+    private String programNameLit;
+    private String goodReturn;
+    private String abnd3954;
+    private String abnd3908;
+    private String abnd3999;
+    private String errrCd;
+    private String wsResourceMsg;
+    private String wsXirb096yMsg;
+    private String lt1200;
+    private String lt1310;
+    private String lt1320;
+    private String lt2110;
+    private String lt2120;
+    private String lt2130;
+    private String ltC100;
+    private String ltF100;
+    private String ltK100;
+    private String ltW100;
+    private String lt9200;
+    private String lt9300;
+    private String ws0;
+    private String ws1;
+    private String wsRegionCentral;
+    private String wsResourceSwitch;
+    private String wsContinueYes;
+    private String wsContinueNo;
+    private String ltDb2ReturnCodes;
+    private String ltAlphaReturnCodes;
+    private String wsXirb096yView;
+    private String wsFileEofSwitch;
+    private String fileEof;
+    private String notFileEof;
+    private String wsRetryInd;
+    private String wsRetrySuccessful;
+    private String wsRetryNotSuccessful;
+    private String wsStCdDsb5RowsInd;
+    private String stCdDsb5;
+    private String noStCdDsb5;
+    private String wsActionType;
+    private String openCntl;
+    private String readCntl;
+    private String closeCntl;
+    private String wsApplccnRgnIdFlag;
+    private String central;
+    private String wsXirb096ySwitch;
+    private String moreXirb096yRows;
+    private String noMoreXirb096yRows;
+    private String wsCurrPrcssCyDate;
+    private String wsBillPerCd1;
+    private String wsBillPerCd2;
+    private String wsTempTimeStmp;
+    private String wsTempTimeStmpCc;
+    private String wsTempTimeStmpYr;
+    private String wsTempTimeStmpMo;
+    private String wsTempTimeStmpDy;
+    private String wsTempTimeStmpHr;
+    private String wsTempTimeStmpMn;
+    private String wsTempTimeStmpSc;
+    private String wsFrmtC4000Dat;
+    private String wsFrmtC4000Cc;
+    private String wsFrmtC4000Yr;
+    private String wsFrmtC4000Mo;
+    private String wsFrmtC4000Dy;
+    private String wsFrmtC4000Tim;
+    private String wsFrmtC4000Hr;
+    private String wsFrmtC4000Mn;
+    private String wsFrmtC4000Sc;
+    private String wsS232CycleDay;
+    private String wsS232UsgId;
+    private String wsS232TrmsnSeqNo;
+    private String wsApplccnLocnId;
+    private String wsApplccnBlgGrId;
+    private String wsRetryCt;
+    private String errCode;
+    private String wsRecWriteCnt;
+    private String wsXirb096yCntr;
+
+    public XIRB5100WorkingStorage(List<String> inputLines) {
+        // Initialize working storage variables
+        programNameLit = inputLines.get(0).substring(0, 8);
+        goodReturn = inputLines.get(1).substring(0, 4);
+        abnd3954 = inputLines.get(2).substring(0, 4);
+        abnd3908 = inputLines.get(3).substring(0, 4);
+        abnd3999 = inputLines.get(4).substring(0, 4);
+        errrCd = inputLines.get(5).substring(0, 4);
+        wsResourceMsg = inputLines.get(6).substring(0, 50);
+        wsXirb096yMsg = inputLines.get(7).substring(0, 50);
+        lt1200 = inputLines.get(8).substring(0, 4);
+        lt1310 = inputLines.get(9).substring(0, 4);
+        lt1320 = inputLines.get(10).substring(0, 4);
+        lt2110 = inputLines.get(11).substring(0, 4);
+        lt2120 = inputLines.get(12).substring(0, 4);
+        lt2130 = inputLines.get(13).substring(0, 4);
+        ltC100 = inputLines.get(14).substring(0, 4);
+        ltF100 = inputLines.get(15).substring(0, 4);
+        ltK100 = inputLines.get(16).substring(0, 4);
+        ltW100 = inputLines.get(17).substring(0, 4);
+        lt9200 = inputLines.get(18).substring(0, 4);
+        lt9300 = inputLines.get(19).substring(0, 4);
+        ws0 = inputLines.get(20).substring(0, 1);
+        ws1 = inputLines.get(21).substring(0, 1);
+        wsRegionCentral = inputLines.get(22).substring(0, 8);
+        wsResourceSwitch = inputLines.get(23).substring(0, 1);
+        wsContinueYes = inputLines.get(24).substring(0, 1);
+        wsContinueNo = inputLines.get(25).substring(0, 1);
+        ltDb2ReturnCodes = inputLines.get(26).substring(0, 9);
+        ltAlphaReturnCodes = inputLines.get(27).substring(0, 4);
+        wsXirb096yView = inputLines.get(28).substring(0, 8);
+        wsFileEofSwitch = inputLines.get(29).substring(0, 1);
+        fileEof = inputLines.get(30).substring(0, 1);
+        notFileEof = inputLines.get(31).substring(0, 1);
+        wsRetryInd = inputLines.get(32).substring(0, 1);
+        wsRetrySuccessful = inputLines.get(33).substring(0, 1);
+        wsRetryNotSuccessful = inputLines.get(34).substring(0, 1);
+        wsStCdDsb5RowsInd = inputLines.get(35).substring(0, 1);
+        stCdDsb5 = inputLines.get(36).substring(0, 1);
+        noStCdDsb5 = inputLines.get(37).substring(0, 1);
+        wsActionType = inputLines.get(38).substring(0, 1);
+        openCntl = inputLines.get(39).substring(0, 1);
+        readCntl = inputLines.get(40).substring(0, 1);
+        closeCntl = inputLines.get(41).substring(0, 1);
+        wsApplccnRgnIdFlag = inputLines.get(42).substring(0, 8);
+        central = inputLines.get(43).substring(0, 8);
+        wsXirb096ySwitch = inputLines.get(44).substring(0, 8);
+        moreXirb096yRows = inputLines.get(45).substring(0, 1);
+        noMoreXirb096yRows = inputLines.get(46).substring(0, 1);
+        wsCurrPrcssCyDate = inputLines.get(47).substring(0, 10);
+        wsBillPerCd1 = inputLines.get(48).substring(0, 3);
+        wsBillPerCd2 = inputLines.get(49).substring(0, 3);
+        wsTempTimeStmp = inputLines.get(50).substring(0, 20);
+        wsTempTimeStmpCc = inputLines.get(51).substring(0, 2);
+        wsTempTimeStmpYr = inputLines.get(52).substring(0, 2);
+        wsTempTimeStmpMo = inputLines.get(53).substring(0, 2);
+        wsTempTimeStmpDy = inputLines.get(54).substring(0, 2);
+        wsTempTimeStmpHr = inputLines.get(55).substring(0, 2);
+        wsTempTimeStmpMn = inputLines.get(56).substring(0, 2);
+        wsTempTimeStmpSc = inputLines.get(57).substring(0, 2);
+        wsFrmtC4000Dat = inputLines.get(58).substring(0, 10);
+        wsFrmtC4000Cc = inputLines.get(59).substring(0, 2);
+        wsFrmtC4000Yr = inputLines.get(60).substring(0, 2);
+        wsFrmtC4000Mo = inputLines.get(61).substring(0, 2);
+        wsFrmtC4000Dy = inputLines.get(62).substring(0, 2);
+        wsFrmtC4000Tim = inputLines.get(63).substring(0, 8);
+        wsFrmtC4000Hr = inputLines.get(64).substring(0, 2);
+        wsFrmtC4000Mn = inputLines.get(65).substring(0, 2);
+        wsFrmtC4000Sc = inputLines.get(66).substring(0, 2);
+        wsS232CycleDay = inputLines.get(67).substring(0, 2);
+        wsS232UsgId = inputLines.get(68).substring(0, 26);
+        wsS232TrmsnSeqNo = inputLines.get(69).substring(0, 2);
+        wsApplccnLocnId = inputLines.get(70).substring(0, 20);
+        wsApplccnBlgGrId = inputLines.get(71).substring(0, 12);
+        wsRetryCt = inputLines.get(72).substring(0, 4);
+        errCode = inputLines.get(73).substring(0, 4);
+        wsRecWriteCnt = inputLines.get(74).substring(0, 13);
+        wsXirb096yCntr = inputLines.get(75).substring(0, 9);
+    }
+
+    public String getProgramNameLit() {
+        return programNameLit;
+    }
+
+    public String getGoodReturn() {
+        return goodReturn;
+    }
+
+    public String getAbnd3954() {
+        return abnd3954;
+    }
+
+    public String getAbnd3908() {
+        return abnd3908;
+    }
+
+    public String getAbnd3999() {
+        return abnd3999;
+    }
+
+    public String getErrrCd() {
+        return errrCd;
+    }
+
+    public String getWsResourceMsg() {
+        return wsResourceMsg;
+    }
+
+    public String getWsXirb096yMsg() {
+        return wsXirb096yMsg;
+    }
+
+    public String getLt1200() {
+        return lt1200;
+    }
+
+    public String getLt1310() {
+        return lt1310;
+    }
+
+    public String getLt1320() {
+        return lt1320;
+    }
+
+    public String getLt2110() {
+        return lt2110;
+    }
+
+    public String getLt2120() {
+        return lt2120;
+    }
+
+    public String getLt2130() {
+        return lt2130;
+    }
+
+    public String getLtC100() {
+        return ltC100;
+    }
+
+    public String getLtF100() {
+        return ltF100;
+    }
+
+    public String getLtK100() {
+        return ltK100;
+    }
+
+    public String getLtW100() {
+        return ltW100;
+    }
+
+    public String getLt9200() {
+        return lt9200;
+    }
+
+    public String getLt9300() {
+        return lt9300;
+    }
+
+    public String getWs0() {
+        return ws0;
+    }
+
+    public String getWs1() {
+        return ws1;
+    }
+
+    public String getWsRegionCentral() {
+        return wsRegionCentral;
+    }
+
+    public String getWsResourceSwitch() {
+        return wsResourceSwitch;
+    }
+
+    public String getWsContinueYes() {
+        return wsContinueYes;
+    }
+
+    public String getWsContinueNo() {
+        return wsContinueNo;
+    }
+
+    public String getLtDb2ReturnCodes() {
+        return ltDb2ReturnCodes;
+    }
+
+    public String getLtAlphaReturnCodes() {
+        return ltAlphaReturnCodes;
+    }
+
+    public String getWsXirb096yView() {
+        return wsXirb096yView;
+    }
+
+    public String getWsFileEofSwitch() {
+        return wsFileEofSwitch;
+    }
+
+    public String getFileEof() {
+        return fileEof;
+    }
+
+    public String getNotFileEof() {
+        return notFileEof;
+    }
+
+    public String getWsRetryInd() {
+        return wsRetryInd;
+    }
+
+    public String getWsRetrySuccessful() {
+        return wsRetrySuccessful;
+    }
+
+    public String getWsRetryNotSuccessful() {
+        return wsRetryNotSuccessful;
+    }
+
+    public String getWsStCdDsb5RowsInd() {
+        return wsStCdDsb5RowsInd;
+    }
+
+    public String getStCdDsb5() {
+        return stCdDsb5;
+    }
+
+    public String getNoStCdDsb5() {
+        return noStCdDsb5;
+    }
+
+    public String getWsActionType() {
+        return wsActionType;
+    }
+
+    public String getOpenCntl() {
+        return openCntl;
+    }
+
+    public String getReadCntl() {
+        return readCntl;
+    }
+
+    public String getCloseCntl() {
+        return closeCntl;
+    }
+
+    public String getWsApplccnRgnIdFlag() {
+        return wsApplccnRgnIdFlag;
+    }
+
+    public String getCentral() {
+        return central;
+    }
+
+    public String getWsXirb096ySwitch() {
+        return wsXirb096ySwitch;
+    }
+
+    public String getMoreXirb096yRows() {
+        return moreXirb096yRows;
+    }
+
+    public String getNoMoreXirb096yRows() {
+        return noMoreXirb096yRows;
+    }
+
+    public String getWsCurrPrcssCyDate() {
+        return wsCurrPrcssCyDate;
+    }
+
+    public String getWsBillPerCd1() {
+        return wsBillPerCd1;
+    }
+
+    public String getWsBillPerCd2() {
+        return wsBillPerCd2;
+    }
+
+    public String getWsTempTimeStmp() {
+        return wsTempTimeStmp;
+    }
+
+    public String getWsTempTimeStmpCc() {
+        return wsTempTimeStmpCc;
+    }
+
+    public String getWsTempTimeStmpYr() {
+        return wsTempTimeStmpYr;
+    }
+
+    public String getWsTempTimeStmpMo() {
+        return wsTempTimeStmpMo;
+    }
+
+    public String getWsTempTimeStmpDy() {
+        return wsTempTimeStmpDy;
+    }
+
+    public String getWsTempTimeStmpHr() {
+        return wsTempTimeStmpHr;
+    }
+
+    public String getWsTempTimeStmpMn() {
+        return wsTempTimeStmpMn;
+    }
+
+    public String getWsTempTimeStmpSc() {
+        return wsTempTimeStmpSc;
+    }
+
+    public String getWsFrmtC4000Dat() {
+        return wsFrmtC4000Dat;
+    }
+
+    public String getWsFrmtC4000Cc() {
+        return wsFrmtC4000Cc;
+    }
+
+    public String getWsFrmtC4000Yr() {
+        return wsFrmtC4000Yr;
+    }
+
+    public String getWsFrmtC4000Mo() {
+        return wsFrmtC4000Mo;
+    }
+
+    public String getWsFrmtC4000Dy() {
+        return wsFrmtC4000Dy;
+    }
+
+    public String getWsFrmtC4000Tim() {
+        return wsFrmtC4000Tim;
+    }
+
+    public String getWsFrmtC4000Hr() {
+        return wsFrmtC4000Hr;
+    }
+
+    public String getWsFrmtC4000Mn() {
+        return wsFrmtC4000Mn;
+    }
+
+    public String getWsFrmtC4000Sc() {
+        return wsFrmtC4000Sc;
+    }
+
+    public String getWsS232CycleDay() {
+        return wsS232CycleDay;
+    }
+
+    public String getWsS232UsgId() {
+        return wsS232UsgId;
+    }
+
+    public String getWsS232TrmsnSeqNo() {
+        return wsS232TrmsnSeqNo;
+    }
+
+    public String getWsApplccnLocnId() {
+        return wsApplccnLocnId;
+    }
+
+    public String getWsApplccnBlgGrId() {
+        return wsApplccnBlgGrId;
+    }
+
+    public String getWsRetryCt() {
+        return wsRetryCt;
+    }
+
+    public String getErrCode() {
+        return errCode;
+    }
+
+    public String getWsRecWriteCnt() {
+        return wsRecWriteCnt;
+    }
+
+    public String getWsXirb096yCntr() {
+        return wsXirb096yCntr;
+    }
+}
+
+class XIRB5100Processor {
+
+    private XIRB5100WorkingStorage workingStorage;
+
+    public XIRB5100Processor(XIRB5100WorkingStorage workingStorage) {
+        this.workingStorage = workingStorage;
+    }
+
+    public void process() {
+        // Initialize variables
+        String programNameLit = workingStorage.getProgramNameLit();
+        String goodReturn = workingStorage.getGoodReturn();
+        String abnd3954 = workingStorage.getAbnd3954();
+        String abnd3908 = workingStorage.getAbnd3908();
+        String abnd3999 = workingStorage.getAbnd3999();
+        String errrCd = workingStorage.getErrrCd();
+        String wsResourceMsg = workingStorage.getWsResourceMsg();
+        String wsXirb096yMsg = workingStorage.getWsXirb096yMsg();
+        String lt1200 = workingStorage.getLt1200();
+        String lt1310 = workingStorage.getLt1310();
+        String lt1320 = workingStorage.getLt1320();
+        String lt2110 = workingStorage.getLt2110();
+        String lt2120 = workingStorage.getLt2120();
+        String lt2130 = workingStorage.getLt2130();
+        String ltC100 = workingStorage.getLtC100();
+        String ltF100 = workingStorage.getLtF100();
+        String ltK100 = workingStorage.getLtK100();
+        String ltW100 = workingStorage.getLtW100();
+        String lt9200 = workingStorage.getLt9200();
+        String lt9300 = workingStorage.getLt9300();
+        String ws0 = workingStorage.getWs0();
+        String ws1 = workingStorage.getWs1();
+        String wsRegionCentral = workingStorage.getWsRegionCentral();
+        String wsResourceSwitch = workingStorage.getWsResourceSwitch();
+        String wsContinueYes = workingStorage.getWsContinueYes();
+        String wsContinueNo = workingStorage.getWsContinueNo();
+        String ltDb2ReturnCodes = workingStorage.getLtDb2ReturnCodes();
+        String ltAlphaReturnCodes = workingStorage.getLtAlphaReturnCodes();
+        String wsXirb096yView = workingStorage.getWsXirb096yView();
+        String wsFileEofSwitch = workingStorage.getWsFileEofSwitch();
+        String fileEof = workingStorage.getFileEof();
+        String notFileEof = workingStorage.getNotFileEof();
+        String wsRetryInd = workingStorage.getWsRetryInd();
+        String wsRetrySuccessful = workingStorage.getWsRetrySuccessful();
+        String wsRetryNotSuccessful = workingStorage.getWsRetryNotSuccessful();
+        String wsStCdDsb5RowsInd = workingStorage.getWsStCdDsb5RowsInd();
+        String stCdDsb5 = workingStorage.getStCdDsb5();
+        String noStCdDsb5 = workingStorage.getNoStCdDsb5();
+        String wsActionType = workingStorage.getWsActionType();
+        String openCntl = workingStorage.getOpenCntl();
+        String readCntl = workingStorage.getReadCntl();
+        String closeCntl = workingStorage.getCloseCntl();
+        String wsApplccnRgnIdFlag = workingStorage.getWsApplccnRgnIdFlag();
+        String central = workingStorage.getCentral();
+        String wsXirb096ySwitch = workingStorage.getWsXirb096ySwitch();
+        String moreXirb096yRows = workingStorage.getMoreXirb096yRows();
+        String noMoreXirb096yRows = workingStorage.getNoMoreXirb096yRows();
+        String wsCurrPrcssCyDate = workingStorage.getWsCurrPrcssCyDate();
+        String wsBillPerCd1 = workingStorage.getWsBillPerCd1();
+        String wsBillPerCd2 = workingStorage.getWsBillPerCd2();
+        String wsTempTimeStmp = workingStorage.getWsTempTimeStmp();
+        String wsTempTimeStmpCc = workingStorage.getWsTempTimeStmpCc();
+        String wsTempTimeStmpYr = workingStorage.getWsTempTimeStmpYr();
+        String wsTempTimeStmpMo = workingStorage.getWsTempTimeStmpMo();
+        String wsTempTimeStmpDy = workingStorage.getWsTempTimeStmpDy();
+        String wsTempTimeStmpHr = workingStorage.getWsTempTimeStmpHr();
+        String wsTempTimeStmpMn = workingStorage.getWsTempTimeStmpMn();
+        String wsTempTimeStmpSc = workingStorage.getWsTempTimeStmpSc();
+        String wsFrmtC4000Dat = workingStorage.getWsFrmtC4000Dat();
+        String wsFrmtC4000Cc = workingStorage.getWsFrmtC4000Cc();
+        String wsFrmtC4000Yr = workingStorage.getWsFrmtC4000Yr();
+        String wsFrmtC4000Mo = workingStorage.getWsFrmtC4000Mo();
+        String wsFrmtC4000Dy = workingStorage.getWsFrmtC4000Dy();
+        String wsFrmtC4000Tim = workingStorage.getWsFrmtC4000Tim();
+        String wsFrmtC4000Hr = workingStorage.getWsFrmtC4000Hr();
+        String wsFrmtC4000Mn = workingStorage.getWsFrmtC4000Mn();
+        String wsFrmtC4000Sc = workingStorage.getWsFrmtC4000Sc();
+        String wsS232CycleDay = workingStorage.getWsS232CycleDay();
+        String wsS232UsgId = workingStorage.getWsS232UsgId();
+        String wsS232TrmsnSeqNo = workingStorage.getWsS232TrmsnSeqNo();
+        String wsApplccnLocnId = workingStorage.getWsApplccnLocnId();
+        String wsApplccnBlgGrId = workingStorage.getWsApplccnBlgGrId();
+        String wsRetryCt = workingStorage.getWsRetryCt();
+        String errCode = workingStorage.getErrCode();
+        String wsRecWriteCnt = workingStorage.getWsRecWriteCnt();
+        String wsXirb096yCntr = workingStorage.getWsXirb096yCntr();
+
+        // Perform main processing
+        // 1000-BEGIN-PROGRAM
+        // 1100-INITIALIZATION
+        // 1200-CALL-Z1000
+        // 1300-CALL-C1000
+        // 1400-INIT-C4000LK1
+        // 1500-PROCESS-HDR-REC
+        // 2000-MAIN-PROCESS
+        // 2010-DECLARE-OPEN-XIRB096Y
+        // 2020-FETCH-XIRB096Y
+        // 2040-PROCESS-DET-REC
+        // 2050-PROCESS-TRL-REC
+        // 2030-CLOSE-XIRB096Y
+        // 9000-END-PROGRAM
+
+        // 1000-BEGIN-PROGRAM
+        // Perform 1000-BEGIN-PROGRAM THRU 1000-EXIT.
+        // 1000-EXIT.
+        // Exit.
+
+        // 1100-INITIALIZATION
+        // Perform 1100-INITIALIZATION THRU 1100-EXIT.
+        // 1100-EXIT.
+        // Exit.
+
+        // 1200-CALL-Z1000
+        // Perform 1200-CALL-Z1000 THRU 1200-EXIT.
+        // 1200-EXIT.
+        // Exit.
+
+        // 1300-CALL-C1000
+        // Perform 1300-CALL-C1000 THRU 1300-EXIT.
+        // 1300-EXIT.
+        // Exit.
+
+        // 1400-INIT-C4000LK1
+        // Perform 1400-INIT-C4000LK1 THRU 1400-EXIT.
+        // 1400-EXIT.
+        // Exit.
+
+        // 1500-PROCESS-HDR-REC
+        // Perform 1500-PROCESS-HDR-REC THRU 1500-EXIT.
+        // 1500-EXIT.
+        // Exit.
+
+        // 2000-MAIN-PROCESS
+        // Perform 2000-MAIN-PROCESS THRU 2000-EXIT.
+        // 2000-EXIT.
+        // Exit.
+
+        // 2010-DECLARE-OPEN-XIRB096Y
+        // Perform 2010-DECLARE-OPEN-XIRB096Y THRU 2010-EXIT.
+        // 2010-EXIT.
+        // Exit.
+
+        // 2020-FETCH-XIRB096Y
+        // Perform 2020-FETCH-XIRB096Y THRU 2020-EXIT.
+        // 2020-EXIT.
+        // Exit.
+
+        // 2040-PROCESS-DET-REC
+        // Perform 2040-PROCESS-DET-REC THRU 2040-EXIT.
+        // 2040-EXIT.
+        // Exit.
+
+        // 2050-PROCESS-TRL-REC
+        // Perform 2050-PROCESS-TRL-REC THRU 2050-EXIT.
+        // 2050-EXIT.
+        // Exit.
+
+        // 2030-CLOSE-XIRB096Y
+        // Perform 2030-CLOSE-XIRB096Y THRU 2030-EXIT.
+        // 2030-EXIT.
+        // Exit.
+
+        // 9000-END-PROGRAM
+        // Perform 9000-END-PROGRAM.
+        // 9000-EXIT.
+        // Exit.
+    }
+
+    public List<String> getOutputLines() {
+        List<String> outputLines = new ArrayList<>();
+        // Add output lines here
+        return outputLines;
+    }
+}
+```
