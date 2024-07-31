@@ -4358,3 +4358,146 @@ class XIRB5100Processor {
         }
         
 }
+
+
+
+
+
+from crewai import Agent
+from langchain_community import tools
+
+address_manager= Agent(
+    role= "Address Manager",
+    goal= "Manage address-related inputs and data",
+    backstory=("Expert in handling and verifying address information.")
+)
+
+flow_agent=Agent(
+    role="Salesforce Order Manager",
+    goal="create and manage SF-orders, inputs and data",
+    tools=["json"],
+    backstory=("Skilled in managing order data with salesforce"),
+)
+
+
+salesforce_account_manager=Agent(
+    role="Salesforce Account Manager",
+    goal="Create and update SF-Accounts",
+    backstory= ("Proficient in handling account information in Salesforce."))
+
+service_appointment_manager=Agent(
+    role="Service Appointment Manager",
+    goal=" Schedule and manage service appointments",
+    backstory="Adept at organizing and scheduling appointments efficiently.")
+
+work_order_manager=Agent(
+    role=" Work Order Manager",
+    goal=" Create work orders based on inputs and criteria",
+    backstory=" Experienced in managing work orders and ensuring accuracy.")
+
+decision_matrix_evaluator=Agent(
+    role= "Decision Matrix Evaluator",
+    goal=" Evaluate the decision matrix for eligibility and status",
+    backstory="Expert in analyzing decision matrices and determining outcomes.")
+
+fiber_installation_manager=Agent(
+  role="Fiber Installation Manager",
+  goal="Handle fiber drop installation checks via QFAST API",
+  backstory="Skilled in managing fiber installations and API interactions.")
+
+buried_site_checker=Agent(
+  role="Buried Site Checker",
+  goal="Perform buried site checks when required",
+  backstory="Experienced in conducting site checks for buried utilities.")
+
+installation_interval_manager=Agent(
+  role="Installation Interval Manager",
+  goal=" Manage installation intervals based on specific conditions",
+  backstory=" Proficient in scheduling and managing installation timelines.")
+
+adapt_status_manager=Agent(
+    role=" ADAPT Status Manager",
+    goal="Handle ADAPT status checks and manage related work orders",
+    backstory="Expert in monitoring and managing ADAPT statuses.")
+
+
+tools.py:
+
+from crewai_tools import tool
+import json
+
+
+with open('C:\Users\AD33119\OneDrive - Lumen\Documents\GitHub\SF_WO_Agent\src\sf_wo_agent\config\SF_Stub.json', 'r') as file:
+        data = json.load(file)
+
+
+@tool("Account_Status_Checker")
+def Account_Status_Checker(address):
+    "You are an expert in fetching account status for any given address."
+    acc_status = data[address]["account"]
+    return acc_status
+
+@tool("Service_Appt_Checker")
+def Service_Appt_Checker(address):
+    "You are an expert in fetching service appointment information for any given address."
+    service_appt = data[address]["service_appt"]
+    return service_appt
+
+@tool("Work_Order_Checker")
+def Work_Order_Checker(address):
+    "You are an expert in fetching work order information for any given address."
+    work_order = data[address]["work_order"]
+    return work_order
+
+@tool("Work_Order_Checker")
+def Work_Order_Checker(address):
+    "You are an expert in fetching work order information for any given address."
+    work_order = data[address]["work_order"]
+    return work_order
+
+@tool("SmartNID_Status_Checker")
+def SmartNID_Status_Checker(address):
+    "You are an expert in fetching SmartNID status for any given address."
+    smartnid_status = data[address]["smartnid status"]
+    return smartnid_status
+
+
+@tool("Adapt_Status_Checker")
+def Adapt_Status_Checker(address):
+    "You are an expert in fetching adapt status for any given address."
+    try:    
+        adapt_status = data[address]["adapt_status"]
+        return adapt_status
+    except KeyError:
+        return "Not found"
+
+
+@tool("UDIF_Checker")
+def UDIF_Checker(address):
+    "You are an expert in fetching UDIF information for any given address."
+    try:
+        result = data[address]["UDIF"]
+        return result
+    except KeyError:
+        return "Not found"
+
+
+@tool("BSU_Checker")
+def BSU_Checker(address):
+    "You are an expert in fetching BSU information for any given address."
+    try:
+        result = data[address]["BSU"]
+        return result
+    except KeyError:
+        return "Not found"
+
+
+@tool("Result_Checker")
+def Result_Checker(address):
+    "You are an expert in fetching result information for any given address."
+    result = data[address]["result"]
+    return result
+
+
+
+
